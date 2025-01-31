@@ -1,0 +1,17 @@
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\ArroUITweaks.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\ArroUITweaks.pdb
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\mscorlib.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\ScriptCore.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\SimIFace.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\Sims3GameplayObjects.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\Sims3GameplaySystems.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\Sims3MetaData.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\Sims3StoreObjects.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\System.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\System.Xml.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\Debug\UI.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\Debug\ArroUITweaks.csproj.AssemblyReference.cache
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\Debug\ArroUITweaks.csproj.CoreCompileInputs.cache
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\Debug\ArroUITw.41A293ED.Up2Date
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\Debug\ArroUITweaks.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\Debug\ArroUITweaks.pdb

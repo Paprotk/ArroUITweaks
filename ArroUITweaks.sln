@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArroUITweaks", "ArroUITweaks\ArroUITweaks.csproj", "{B69876A5-9F43-4323-B160-F6B90515FF2A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MonoPatcher", "..\MonoPatcher\MonoPatcher.csproj", "{91460F7B-9C23-4A43-AB52-95EAC8D52D93}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B69876A5-9F43-4323-B160-F6B90515FF2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B69876A5-9F43-4323-B160-F6B90515FF2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B69876A5-9F43-4323-B160-F6B90515FF2A}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{B69876A5-9F43-4323-B160-F6B90515FF2A}.Debug|Any CPU.Build.0 = Debug|x86
+		{91460F7B-9C23-4A43-AB52-95EAC8D52D93}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{91460F7B-9C23-4A43-AB52-95EAC8D52D93}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{91460F7B-9C23-4A43-AB52-95EAC8D52D93}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{91460F7B-9C23-4A43-AB52-95EAC8D52D93}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
