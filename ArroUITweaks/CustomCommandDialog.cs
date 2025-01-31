@@ -63,7 +63,9 @@ namespace Arro.UITweaks
 
             string caption = helpText.Caption;
             string[] lines = caption.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
-            float lineHeight = 20f;
+            float firstLineHeight = 20f; // Height of the first line
+            float subsequentLineHeight = 16f; // Adjusted height for subsequent lines
+            float additionalPadding = 5f; // Small padding at the bottom
             float minHeight = 25f;
             float maxHeight = 720f;
 
@@ -74,7 +76,7 @@ namespace Arro.UITweaks
             else
             {
                 helpText.Visible = true;
-                float newHelpHeight = lines.Length * lineHeight;
+                float newHelpHeight = firstLineHeight + (Math.Max(0, lines.Length - 1) * subsequentLineHeight) + additionalPadding;
                 newHelpHeight = Math.Max(newHelpHeight, minHeight);
                 newHelpHeight = Math.Min(newHelpHeight, maxHeight);
                 Rect helpArea = helpText.Area;
