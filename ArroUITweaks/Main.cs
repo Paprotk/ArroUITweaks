@@ -2,8 +2,7 @@ using System;
 using MonoPatcherLib;
 using Sims3.Gameplay.Core;
 using Sims3.SimIFace;
-
-namespace Arro.RecoverNotification
+namespace Arro.UITweaks
 {
     [Plugin]
     public class Main
@@ -22,6 +21,7 @@ namespace Arro.RecoverNotification
                 Commands.CommandType.General, (RecoverNotification.RecoverLastDeletedNotification));
             Commands.sGameCommands.Register("SendStrayToActiveLot", "Sends a stray pet to the active lot.",
                 Commands.CommandType.Cheat, (StrayTooltipPatch.SendStrayToActiveLot));
+            
         }
         public static void OnWorldLoadFinished(object sender, EventArgs e)
         {

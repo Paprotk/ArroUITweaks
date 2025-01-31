@@ -14,4 +14,6 @@
 	<s:String x:Key="/Default/Environment/AssemblyExplorer/XmlDocument/@EntryValue">&lt;AssemblyExplorer&gt;&#xD;
   &lt;Assembly Path="C:\Users\Arek\Documents\SharpDevelop Projects\DLLS\mscorlib.dll" /&gt;&#xD;
   &lt;Assembly Path="C:\Users\Arek\Documents\SharpDevelop Projects\DLLS\Sims3GameplayObjects.dll" /&gt;&#xD;
+  &lt;Assembly Path="C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.5\System.Core.dll" /&gt;&#xD;
+  &lt;Assembly Path="C:\Users\Arek\RiderProjects\DLLS\MonoPatcher.dll" /&gt;&#xD;
 &lt;/AssemblyExplorer&gt;</s:String></wpf:ResourceDictionary>

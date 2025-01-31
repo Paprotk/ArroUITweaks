@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Sims3.SimIFace;
 using Sims3.UI;
 
-namespace Arro.RecoverNotification
+namespace Arro.UITweaks
 {
     public class LunarTooltip : Tooltip
     {

@@ -3,7 +3,7 @@ using Sims3.SimIFace;
 using Sims3.UI;
 using Sims3.UI.Hud;
 
-namespace Arro.RecoverNotification
+namespace Arro.UITweaks
 {
     public class SimDisplayPatch
     {

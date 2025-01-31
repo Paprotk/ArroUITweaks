@@ -35,9 +35,11 @@
     <ItemGroup>
         <Compile Include="CustomCommandDialog.cs" />
         <Compile Include="CustomLunarTooltip.cs" />
+        <Compile Include="ExceptionHandler.cs" />
         <Compile Include="Main.cs" />
         <Compile Include="NavigationPatch.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
+        <Compile Include="QueueMove.cs" />
         <Compile Include="RecoverNotification.cs" />
         <Compile Include="RelationshipsPanelPatch.cs" />
         <Compile Include="SeasonInfoTooltip.cs" />

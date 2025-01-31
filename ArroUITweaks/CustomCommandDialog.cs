@@ -5,7 +5,7 @@ using Sims3.Gameplay;
 using Sims3.SimIFace;
 using Sims3.UI;
 
-namespace Arro.RecoverNotification
+namespace Arro.UITweaks
 {
     public class CustomCommandConsoleDialog : ModalDialog
     {

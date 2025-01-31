@@ -9,7 +9,7 @@ using Sims3.SimIFace;
 using Sims3.UI;
 using Responder = Sims3.Gameplay.UI.Responder;
 
-namespace Arro.RecoverNotification
+namespace Arro.UITweaks
 {
     public class StrayTooltipPatch : Sim
     {
