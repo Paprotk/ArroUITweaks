@@ -20,7 +20,6 @@ namespace Arro.UITweaks
             {
                 if (instance.InteractionId != 0UL && Responder.Instance.HudModel.IsInteractionCancellableByPlayer(instance.InteractionId))
                 {
-                    Audio.StartSound("ui_primary_button");
                     Sim activeSim = Sim.ActiveActor;
                     if (activeSim != null)
                     {
