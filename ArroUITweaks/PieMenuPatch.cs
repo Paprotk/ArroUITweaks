@@ -4,6 +4,7 @@ using MonoPatcherLib;
 using Sims3.SimIFace;
 using Sims3.UI;
 using Sims3.UI.Hud;
+using System.Text.RegularExpressions;
 
 namespace Arro.UITweaks
 {
@@ -95,7 +96,7 @@ namespace Arro.UITweaks
                 instance.mItemButtons[(int)((UIntPtr)num6)].Visible = true;
             }
 
-            if (instance.mCurrent == instance.mTree.mRoot)
+            if (instance.mCurrent == instance.mTree.mRoot || instance.mCurrent == mFilteredRoot)
             {
                 if (instance.mHeadObjectGuid.IsValid && instance.mHeadSceneWindow != null)
                 {
@@ -134,6 +135,7 @@ namespace Arro.UITweaks
             instance.mContainer.TriggerDown -= instance.OnTriggerDown;
             instance.mTree = null;
             instance.mCurrent = null;
+            mFilteredRoot = null;
             Button searchButton = (instance.GetChildByID(185745581U, true) as Button);
             searchButton.Click -= OnClickShowSearchDialog;
             instance.mContainer.Visible = false;
@@ -157,8 +159,7 @@ namespace Arro.UITweaks
                 ExceptionHandler.HandleException(ex, "OnClickShowSearchDialog");
             }
         }
-
-
+        
         private void ShowSearchDialog(PieMenu pieMenu)
         {
             try
@@ -174,7 +175,7 @@ namespace Arro.UITweaks
                 ExceptionHandler.HandleException(ex, "ShowSearchDialog");
             }
         }
-        
+        private MenuItem mFilteredRoot;
 
         private void FilterMenuItems(PieMenu pieMenu, string query)
         {
@@ -188,21 +189,41 @@ namespace Arro.UITweaks
                 MenuItem newRoot = new MenuItem();
                 newRoot.mTree = pieMenu.mTree; // Fix: Set mTree before adding children
 
+                // Normalize the query to lower case and create a regex pattern
+                string normalizedQuery = Regex.Escape(query.ToLowerInvariant());
+                string pattern = $@"\b{normalizedQuery}\b"; // Word boundary regex pattern
+
                 foreach (MenuItem item in allItems)
                 {
-                    if (item.mName.IndexOf(query, StringComparison.OrdinalIgnoreCase) >= 0)
+                    if (item.mStyle == MenuItem.Style.More)
+                        continue;
+                    if (item.mName.EndsWith("..."))
+                        continue;
+
+                    // Normalize the item name to lower case for comparison
+                    if (Regex.IsMatch(item.mName.ToLowerInvariant(), pattern))
                     {
                         MenuItem newItem = new MenuItem
                         {
                             mName = item.mName,
                             mTag = item.mTag,
                             mStyle = item.mStyle,
-                            mTree = pieMenu.mTree // Ensure each new item's mTree is set
+                            mTree = pieMenu.mTree,
+                            // Copy icon properties
+                            mIconKey = item.mIconKey,
+                            mIconStyle = item.mIconStyle,
+                            mIconThumbnailKey = item.mIconThumbnailKey,
+                            mToolTip = item.mToolTip
                         };
                         newRoot.AddChild(newItem);
                     }
                 }
-
+                if (newRoot.ChildCount == 0)
+                {
+                    SimpleMessageDialog.Show("Error", "No results found for '" + query + "'");
+                    return;
+                }
+                mFilteredRoot = newRoot;
                 pieMenu.mCurrent = newRoot;
                 pieMenu.SetupPieMenuButtons(newRoot, pieMenu.mPositionStack[pieMenu.mPositionStackPtr], false);
             }
@@ -219,12 +240,28 @@ namespace Arro.UITweaks
                 foreach (MenuItem child in root.mChildren)
                 {
                     items.Add(child);
-                    FlattenMenuItems(child, items); // Recursive call
+                    FlattenMenuItems(child, items);
                 }
             }
             catch (Exception ex)
             {
                 ExceptionHandler.HandleException(ex, "FilterMenuItems");
+            }
+        }
+        [ReplaceMethod(typeof(PieMenu), "OnTriggerDown")]
+        public void OnTriggerDown(WindowBase sender, UITriggerEventArgs eventArgs)
+        {
+            if (114345170U == eventArgs.TriggerCode && PieMenu.IsVisible)
+            {
+                Audio.StartSound("ui_build_cancel");
+                PieMenu.Hide();
+                eventArgs.Handled = true;
+            }
+            if (114345171U == eventArgs.TriggerCode && PieMenu.IsVisible)
+            {
+                var pieMenu = (PieMenu)(this as object);
+                Simulator.AddObject(new OneShotFunctionTask(() => { ShowSearchDialog(pieMenu); },
+                    StopWatch.TickStyles.Seconds, 0.1f));
             }
         }
     }
