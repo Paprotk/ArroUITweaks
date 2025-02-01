@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using MonoPatcherLib;
 using Sims3.SimIFace;
 using Sims3.UI;
 using Sims3.UI.Hud;
-using System.Text.RegularExpressions;
 
 namespace Arro.UITweaks
 {
@@ -54,7 +55,6 @@ namespace Arro.UITweaks
                     num2 -= 1U;
                 }
             }
-
             float num3 = 0f;
             float num4 = 0f;
             Rect area = UIManager.GetMainWindow().Area;
@@ -101,7 +101,6 @@ namespace Arro.UITweaks
                 uint num6 = instance.mButtonIndices[(int)((UIntPtr)num2)];
                 instance.mItemButtons[(int)((UIntPtr)num6)].Visible = true;
             }
-
             if (instance.mCurrent == instance.mTree.mRoot || instance.mCurrent == mFilteredRoot)
             {
                 if (instance.mHeadObjectGuid.IsValid && instance.mHeadSceneWindow != null)
@@ -116,6 +115,7 @@ namespace Arro.UITweaks
                     instance.mHeadSceneWindow.Visible = false;
                 }
             }
+            //Update search button position based on container position
             Window firstButton = instance.mItemButtons[0];
             Vector2 position = firstButton.Area.TopLeft;
             Vector2 screenPosition = instance.mContainer.WindowToScreen(position);
@@ -198,46 +198,58 @@ namespace Arro.UITweaks
                 List<MenuItem> allItems = new List<MenuItem>();
                 FlattenMenuItems(originalRoot, allItems);
 
-                // Create new root and assign the mTree from the pieMenu's tree
                 MenuItem newRoot = new MenuItem
                 {
-                    mTree = pieMenu.mTree // Fix: Set mTree before adding children
+                    mTree = pieMenu.mTree
                 };
 
-                // Normalize the query to lower case and create a regex pattern
-                string normalizedQuery = Regex.Escape(query.ToLowerInvariant());
-                string pattern = $@"\b{normalizedQuery}\b"; // Word boundary regex pattern
+                // Normalize query and split into words
+                string normalizedQuery = RemoveDiacritics(query.ToLowerInvariant());
+                string[] queryWords = normalizedQuery.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
                 foreach (MenuItem item in allItems)
                 {
                     if (item.mStyle == MenuItem.Style.More)
                         continue;
-                    if (item.mName.EndsWith("..."))
-                        continue;
 
-                    // Normalize the item name to lower case for comparison
-                    if (Regex.IsMatch(item.mName.ToLowerInvariant(), pattern))
+                    // Normalize item name and split into words
+                    string normalizedItemName = RemoveDiacritics(item.mName.ToLowerInvariant());
+                    string[] itemWords = normalizedItemName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    // Check if all query words are matched
+                    bool allQueryWordsMatched = true;
+                    foreach (string qWord in queryWords)
                     {
-                        MenuItem newItem = new MenuItem
+                        bool wordMatched = false;
+                        foreach (string iWord in itemWords)
                         {
-                            mName = item.mName,
-                            mTag = item.mTag,
-                            mStyle = item.mStyle,
-                            mTree = pieMenu.mTree,
-                            // Copy icon properties
-                            mIconKey = item.mIconKey,
-                            mIconStyle = item.mIconStyle,
-                            mIconThumbnailKey = item.mIconThumbnailKey,
-                            mToolTip = item.mToolTip
-                        };
-                        newRoot.AddChild(newItem);
+                            if (iWord.StartsWith(qWord))
+                            {
+                                wordMatched = true;
+                                break;
+                            }
+                        }
+                        if (!wordMatched)
+                        {
+                            allQueryWordsMatched = false;
+                            break;
+                        }
+                    }
+
+                    if (allQueryWordsMatched)
+                    {
+                        // Clone the original item including its children
+                        MenuItem clonedItem = CloneMenuItem(item);
+                        newRoot.AddChild(clonedItem);
                     }
                 }
+
                 if (newRoot.ChildCount == 0)
                 {
-                    SimpleMessageDialog.Show("Error", "No results found for '" + query + "'");
+                    SimpleMessageDialog.Show("Error", $"No results found for '{query}'");
                     return;
                 }
+
                 mFilteredRoot = newRoot;
                 pieMenu.mCurrent = newRoot;
                 pieMenu.SetupPieMenuButtons(newRoot, pieMenu.mPositionStack[pieMenu.mPositionStackPtr], false);
@@ -246,6 +258,34 @@ namespace Arro.UITweaks
             {
                 ExceptionHandler.HandleException(ex, "FilterMenuItems");
             }
+        }
+        private MenuItem CloneMenuItem(MenuItem original)
+        {
+            MenuItem clone = new MenuItem
+            {
+                mName = original.mName,
+                mTag = original.mTag,
+                mStyle = original.mStyle,
+                mTree = original.mTree,
+                mIconKey = original.mIconKey,
+                mIconStyle = original.mIconStyle,
+                mIconThumbnailKey = original.mIconThumbnailKey,
+                mToolTip = original.mToolTip,
+                mListObjs = original.mListObjs,
+                mHeaders = original.mHeaders,
+                mNumSelectableRows = original.mNumSelectableRows,
+                mPickedObjects = original.mPickedObjects,
+                mTitleDelegate = original.mTitleDelegate,
+                mPickerTestDelegate = original.mPickerTestDelegate
+            };
+
+            foreach (MenuItem child in original.mChildren)
+            {
+                MenuItem clonedChild = CloneMenuItem(child);
+                clone.AddChild(clonedChild);
+            }
+
+            return clone;
         }
 
         private void FlattenMenuItems(MenuItem root, List<MenuItem> items)
@@ -278,6 +318,31 @@ namespace Arro.UITweaks
                 Simulator.AddObject(new OneShotFunctionTask(() => { ShowSearchDialog(pieMenu); },
                     StopWatch.TickStyles.Seconds, 0.1f));
             }
+        }
+        private string RemoveDiacritics(string text)
+        {
+            var normalizedString = text.Normalize(NormalizationForm.FormD);
+            var stringBuilder = new StringBuilder();
+
+            foreach (var c in normalizedString)
+            {
+                var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+                
+                if (c == 'ł')
+                {
+                    stringBuilder.Append('l');
+                }
+                else if (c == 'Ł')
+                {
+                    stringBuilder.Append('L');
+                }
+                else if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+
+            return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
         }
     }
 }
