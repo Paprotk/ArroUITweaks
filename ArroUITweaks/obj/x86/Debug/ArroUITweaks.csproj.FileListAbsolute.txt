@@ -9,10 +9,10 @@ C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\Sims3MetaDat
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\Sims3StoreObjects.dll
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\System.dll
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\System.Xml.dll
-C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\UI.dll
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\x86\Debug\ArroUITweaks.csproj.AssemblyReference.cache
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\x86\Debug\ArroUITweaks.csproj.CoreCompileInputs.cache
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\x86\Debug\ArroUITw.41A293ED.Up2Date
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\x86\Debug\ArroUITweaks.dll
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\x86\Debug\ArroUITweaks.pdb
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\MonoPatcher.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\UIPUBLIC.dll

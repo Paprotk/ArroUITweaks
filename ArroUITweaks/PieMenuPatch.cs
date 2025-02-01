@@ -119,8 +119,16 @@ namespace Arro.UITweaks
             Window firstButton = instance.mItemButtons[0];
             Vector2 position = firstButton.Area.TopLeft;
             Vector2 screenPosition = instance.mContainer.WindowToScreen(position);
+
+            // Get the horizontal center of the first button
+            float firstButtonCenterX = screenPosition.x + (firstButton.Area.Width * 0.5f);
+
+            // Center searchButton horizontally
             Button searchButton = (instance.GetChildByID(185745581U, true) as Button);
-            searchButton.Position = new Vector2(screenPosition.x + 25.5f, screenPosition.y - 75f);
+            searchButton.Position = new Vector2(
+                firstButtonCenterX - (searchButton.Area.Width * 0.5f),
+                screenPosition.y - 40f
+            );
         }
         [ReplaceMethod(typeof(PieMenu), "Begin")]
         public void Begin(MenuTree tree, Vector2 location)
