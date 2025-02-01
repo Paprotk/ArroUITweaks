@@ -49,7 +49,6 @@ namespace Arro.UITweaks
                                 {
                                     ExceptionHandler.HandleException(ex, "InteractionMouseUp");
                                 }
-                                
                             }
                         }
                     }
