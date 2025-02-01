@@ -10,6 +10,12 @@ namespace Arro.UITweaks
 {
     public class PieMenuPatch
     {
+        [ReplaceMethod(typeof(PieMenu), "Load")]
+        public static void Load()
+        {
+            ResourceKey resKey = ResourceKey.CreateUILayoutKey("HUDPieMenuPatch", 0U);
+            PieMenu.sLayout = UIManager.LoadLayoutAndAddToWindow(resKey, UICategory.PieMenu);
+        }
         [ReplaceMethod(typeof(PieMenu), "SetupPieMenuButtons")]
         public void SetupPieMenuButtons(MenuItem menu, Vector2 origin, bool returnButtonVisible)
         {
@@ -110,6 +116,11 @@ namespace Arro.UITweaks
                     instance.mHeadSceneWindow.Visible = false;
                 }
             }
+            Window firstButton = instance.mItemButtons[0];
+            Vector2 position = firstButton.Area.TopLeft;
+            Vector2 screenPosition = instance.mContainer.WindowToScreen(position);
+            Button searchButton = (instance.GetChildByID(185745581U, true) as Button);
+            searchButton.Position = new Vector2(screenPosition.x + 25.5f, screenPosition.y - 75f);
         }
         [ReplaceMethod(typeof(PieMenu), "Begin")]
         public void Begin(MenuTree tree, Vector2 location)
@@ -124,9 +135,11 @@ namespace Arro.UITweaks
             instance.mContainer.Visible = true;
             Button searchButton = (instance.GetChildByID(185745581U, true) as Button);
             searchButton.Click += OnClickShowSearchDialog;
+            searchButton.Visible = true;
             Audio.StartSound("ui_piemenu_primary");
             UIManager.PushModal(instance);
         }
+
         [ReplaceMethod(typeof(PieMenu), "End")]
         public void End()
         {
@@ -146,7 +159,7 @@ namespace Arro.UITweaks
             UIManager.PopModal(instance);
         }
 
-        private void OnClickShowSearchDialog(WindowBase sender, UIButtonClickEventArgs args)
+        public void OnClickShowSearchDialog(WindowBase sender, UIButtonClickEventArgs args)
         {
             try
             {
@@ -186,8 +199,10 @@ namespace Arro.UITweaks
                 FlattenMenuItems(originalRoot, allItems);
 
                 // Create new root and assign the mTree from the pieMenu's tree
-                MenuItem newRoot = new MenuItem();
-                newRoot.mTree = pieMenu.mTree; // Fix: Set mTree before adding children
+                MenuItem newRoot = new MenuItem
+                {
+                    mTree = pieMenu.mTree // Fix: Set mTree before adding children
+                };
 
                 // Normalize the query to lower case and create a regex pattern
                 string normalizedQuery = Regex.Escape(query.ToLowerInvariant());
