@@ -75,7 +75,6 @@ namespace Arro.UITweaks
             {
                 num4 = area.BottomRight.y - a.BottomRight.y;
             }
-
             instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
             Rect rect = new Rect(a.TopLeft - instance.mPieMenuHitMaskPadding,
                 a.BottomRight + instance.mPieMenuHitMaskPadding);
