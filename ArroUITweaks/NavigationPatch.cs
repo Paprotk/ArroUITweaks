@@ -20,10 +20,10 @@ namespace Arro.UITweaks
                 {
                     instance.mInfoStateButtons[1].Visible = false;//hide career
                     instance.mInfoStateButtons[6].Visible = false;//hide opportunities
-                    instance.mInfoStateButtons[2].Position = new Vector2(102f, -29f);//move skills into career position
-                    instance.mInfoStateButtons[5].Position = new Vector2(145f, -29f);//move inventory into skills position
-                    instance.mInfoStateButtons[3].Position = new Vector2(188f, -29f);//move rewards into inventory position
-                    instance.mInfoStateButtons[7].Position = new Vector2(231, -29f);//move motives into opportunities position
+                    instance.mInfoStateButtons[2].Position = new Vector2(102f * Main.TinyUIFixForTS3Integration.getUIScale(), -29f * Main.TinyUIFixForTS3Integration.getUIScale());//move skills into career position
+                    instance.mInfoStateButtons[5].Position = new Vector2(145f * Main.TinyUIFixForTS3Integration.getUIScale(), -29f * Main.TinyUIFixForTS3Integration.getUIScale());//move inventory into skills position
+                    instance.mInfoStateButtons[3].Position = new Vector2(188f * Main.TinyUIFixForTS3Integration.getUIScale(), -29f * Main.TinyUIFixForTS3Integration.getUIScale());//move rewards into inventory position
+                    instance.mInfoStateButtons[7].Position = new Vector2(231 * Main.TinyUIFixForTS3Integration.getUIScale(), -29f * Main.TinyUIFixForTS3Integration.getUIScale());//move motives into opportunities position
                     
 					if (HudController.Instance.IsInfoStateActive(InfoState.Opportunities))
 					{
@@ -86,10 +86,10 @@ namespace Arro.UITweaks
 				{
                     instance.mInfoStateButtons[1].Visible = true;//show career
                     instance.mInfoStateButtons[6].Visible = true;//show opportunities
-                    instance.mInfoStateButtons[2].Position = new Vector2(145f, -29f);//move skills into original position
-                    instance.mInfoStateButtons[5].Position = new Vector2(188f, -29f);//move inventory into original position
-                    instance.mInfoStateButtons[3].Position = new Vector2(274f, -29f);//move rewards into original position
-                    instance.mInfoStateButtons[7].Position = new Vector2(317f, -29f);//move motives into original position
+                    instance.mInfoStateButtons[2].Position = new Vector2(145f * Main.TinyUIFixForTS3Integration.getUIScale(), -29f * Main.TinyUIFixForTS3Integration.getUIScale());//move skills into original position
+                    instance.mInfoStateButtons[5].Position = new Vector2(188f * Main.TinyUIFixForTS3Integration.getUIScale(), -29f * Main.TinyUIFixForTS3Integration.getUIScale());//move inventory into original position
+                    instance.mInfoStateButtons[3].Position = new Vector2(274f * Main.TinyUIFixForTS3Integration.getUIScale(), -29f * Main.TinyUIFixForTS3Integration.getUIScale());//move rewards into original position
+                    instance.mInfoStateButtons[7].Position = new Vector2(317f * Main.TinyUIFixForTS3Integration.getUIScale(), -29f * Main.TinyUIFixForTS3Integration.getUIScale());//move motives into original position
 					instance.mInfoStateButtons[6].Enabled = true;
 					instance.mInfoStateButtons[6].TooltipText = instance.mOpportunitySimTooltipText;
 					instance.mInfoStateButtons[1].Enabled = true;

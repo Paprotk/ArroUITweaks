@@ -18,7 +18,8 @@ namespace Arro.UITweaks
             var instance = (InteractionQueueItem)(this as object);
             if (eventArgs.MouseKey == MouseKeys.kMouseRight)
             {
-                if (instance.InteractionId != 0UL && Responder.Instance.HudModel.IsInteractionCancellableByPlayer(instance.InteractionId))
+                if (instance.InteractionId != 0UL &&
+                    Responder.Instance.HudModel.IsInteractionCancellableByPlayer(instance.InteractionId))
                 {
                     Sim activeSim = Sim.ActiveActor;
                     if (activeSim != null)
@@ -27,23 +28,41 @@ namespace Arro.UITweaks
                         if (interactionQueue != null)
                         {
                             int currentIndex = -1;
+                            InteractionInstance originalInteraction = null;
+
+                            // Find the interaction in the queue
                             for (int i = 0; i < interactionQueue.Count; i++)
                             {
                                 if (interactionQueue.mInteractionList[i].Id == instance.InteractionId)
                                 {
                                     currentIndex = i;
+                                    originalInteraction = interactionQueue.mInteractionList[i];
                                     break;
                                 }
                             }
-                            
-                            if (currentIndex != -1 && currentIndex < interactionQueue.Count - 1 && currentIndex > 0)
+
+                            if (currentIndex != -1 && currentIndex > 0 && currentIndex < interactionQueue.Count - 1)
                             {
                                 try
                                 {
-                                    InteractionInstance interactionToMove = interactionQueue.mInteractionList[currentIndex];
+                                    // Copy interaction details
+                                    var interactionPair = originalInteraction.InteractionObjectPair;
+                                    var target = interactionPair.Target;
+                                    var definition = interactionPair.InteractionDefinition;
+
+                                    //Remove the original interaction
                                     interactionQueue.RemoveInteraction(currentIndex, false);
-                                    // Insert it at the new index (currentIndex + 1)
-                                    interactionQueue.InsertInteraction(interactionToMove, currentIndex + 1);
+
+                                    // Create and insert a new instance with a default priority
+                                    var newInteraction = definition.CreateInstance(
+                                        target,
+                                        activeSim,
+                                        new InteractionPriority(InteractionPriorityLevel
+                                            .UserDirected), // Use UserDirected priority
+                                        false,
+                                        true
+                                    );
+                                    interactionQueue.InsertInteraction(newInteraction, currentIndex + 1);
                                 }
                                 catch (Exception ex)
                                 {
@@ -54,6 +73,7 @@ namespace Arro.UITweaks
                     }
                 }
             }
+
             if (eventArgs.MouseKey == MouseKeys.kMouseLeft)
             {
                 if (instance.InteractionId != 0UL)
@@ -64,6 +84,7 @@ namespace Arro.UITweaks
                         {
                             Audio.StartSound("ui_queue_delete");
                         }
+
                         List<IInteractionInstance> interactionList = Responder.Instance.HudModel.GetInteractionList();
                         foreach (IInteractionInstance interactionInstance in interactionList)
                         {
@@ -73,9 +94,11 @@ namespace Arro.UITweaks
                                 {
                                     Responder.Instance.HudModel.OnAutonomousInteractionCancelledFromUI();
                                 }
+
                                 break;
                             }
                         }
+
                         Responder.Instance.HudModel.CancelInteraction(instance.InteractionId);
                     }
                 }
@@ -86,6 +109,7 @@ namespace Arro.UITweaks
                         Responder.Instance.HudModel.CancelSocializing();
                         return;
                     }
+
                     Responder.Instance.HudModel.CancelPosture();
                 }
             }

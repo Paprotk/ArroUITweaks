@@ -26,5 +26,11 @@ namespace Arro.UITweaks
         public static void OnWorldLoadFinished(object sender, EventArgs e)
         {
         }
+        public static class TinyUIFixForTS3Integration
+        {
+            public delegate float FloatGetter();
+
+            public static FloatGetter getUIScale = () => 1f;
+        }
     }
 }
