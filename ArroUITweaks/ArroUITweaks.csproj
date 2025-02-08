@@ -79,7 +79,7 @@
         <HintPath>..\..\..\Documents\SharpDevelop Projects\DLLS\System.Xml.dll</HintPath>
       </Reference>
       <Reference Include="UI">
-        <HintPath>..\..\..\Documents\SharpDevelop Projects\DLLS\UIPUBLIC.dll</HintPath>
+        <HintPath>..\..\..\Documents\SharpDevelop Projects\DLLS\UI.dll</HintPath>
       </Reference>
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets"/>

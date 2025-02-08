@@ -58,6 +58,8 @@ namespace Arro.UITweaks
 								}
 							}
 						}
+                        //Update, so notification count text is correct
+                        notificationManager.UpdatePageInfo();
 					}
 				}
 			}

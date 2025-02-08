@@ -15,4 +15,4 @@ C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\x86\Debug\ArroUITw.41A
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\x86\Debug\ArroUITweaks.dll
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\obj\x86\Debug\ArroUITweaks.pdb
 C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\MonoPatcher.dll
-C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\UIPUBLIC.dll
+C:\Users\Arek\RiderProjects\ArroUITweaks\ArroUITweaks\bin\x86\Debug\UI.dll
