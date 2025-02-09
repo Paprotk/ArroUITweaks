@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using MonoPatcherLib;
+using Sims3.Gameplay.Utilities;
 using Sims3.SimIFace;
 using Sims3.UI;
 using Sims3.UI.Hud;
@@ -25,8 +26,6 @@ namespace Arro.UITweaks
             {
                 var instance = (PieMenu)(this as object);
                 uint childCount = (uint)menu.ChildCount;
-                StyledNotification.Show(new StyledNotification.Format(childCount.ToString(),
-                    StyledNotification.NotificationStyle.kGameMessagePositive));
                 int num = returnButtonVisible ? 12 : 13;
                 for (int i = 0; i < num; i++)
                 {
@@ -82,7 +81,17 @@ namespace Arro.UITweaks
                     num4 = area.BottomRight.y - a.BottomRight.y;
                 }
 
-                instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
+                // FIX: Check if current menu is filtered root before incrementing stack pointer
+                if (instance.mCurrent == mFilteredRoot)
+                {
+                    // Overwrite current position without incrementing pointer
+                    instance.mPositionStack[instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
+                }
+                else
+                {
+                    instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
+                }
+
                 Rect rect = new Rect(a.TopLeft - instance.mPieMenuHitMaskPadding,
                     a.BottomRight + instance.mPieMenuHitMaskPadding);
                 rect = Rect.Offset(rect, num3, num4);
@@ -171,9 +180,9 @@ namespace Arro.UITweaks
             {
                 searchTextEdit.Caption = "";
                 searchTextEdit.TextChange += OnTextChange;
+                searchTextEdit.HideCaret = true;
                 UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit);
             }
-
             Audio.StartSound("ui_piemenu_primary");
             UIManager.PushModal(instance);
         }
@@ -206,12 +215,28 @@ namespace Arro.UITweaks
         {
             var instance = (PieMenu)(this as object);
             string query = (sender as TextEdit).Caption;
+    
+            // Get the current position of the UI element
+            Rect currentArea = sender.Area;
+            Vector2 topLeft = currentArea.TopLeft;
+
+            // Calculate new width/height
+            int characterCount = query.Length;
+            float width = 7f * characterCount;
+            float height = 17f;
+
+            // Create a new Rect with the SAME POSITION but updated size
+            sender.Area = new Rect(
+                topLeft.x,          // Keep original X position
+                topLeft.y,          // Keep original Y position
+                topLeft.x + width,  // New right edge (position + width)
+                topLeft.y + height  // New bottom edge (position + height)
+            );
 
             if (string.IsNullOrEmpty(query))
             {
                 instance.mCurrent = instance.ValidateMenuStructure(instance.mTree.mRoot);
-                instance.SetupPieMenuButtons(instance.mCurrent, instance.mPositionStack[instance.mPositionStackPtr],
-                    false);
+                instance.SetupPieMenuButtons(instance.mCurrent, instance.mPositionStack[instance.mPositionStackPtr], false);
             }
             else
             {
@@ -338,7 +363,10 @@ namespace Arro.UITweaks
             {
                 if (newRoot.ChildCount == 0)
                 {
-                    SimpleMessageDialog.Show("No Results", $"No interactions found for '{query}'.");
+                    var instance = (PieMenu)(this as object);
+                    Sims3.Gameplay.UI.PieMenu.ShowGreyedOutTooltip(Localization.LocalizeString("Gameplay/Abstracts/GameObject:NoInteractions", new object[0]), pieMenu.mPositionStack[pieMenu.mPositionStackPtr]);
+                    TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
+                    searchTextEdit.Caption = searchTextEdit.Caption.Substring(0, searchTextEdit.Caption.Length - 1);
                     return;
                 }
             }
@@ -356,19 +384,6 @@ namespace Arro.UITweaks
             {
                 ExceptionHandler.HandleException(ex, "FilterMenuItemsValidatemenustructure");
                 return;
-            }
-
-            try
-            {
-                if (mFilteredRoot.ChildCount > 12)
-                {
-                    SimpleMessageDialog.Show("Validation Error",
-                        $"Filtered menu still has {mFilteredRoot.ChildCount} items after validation!");
-                }
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsDebugcheck");
             }
 
             try
