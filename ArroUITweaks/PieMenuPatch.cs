@@ -210,7 +210,7 @@ namespace Arro.UITweaks
             Vector2 topLeft = currentArea.TopLeft;
             
             int characterCount = query.Length;
-            float width = 8f * characterCount;
+            float width = 13f * characterCount;
             float height = 17f;
             
             sender.Area = new Rect(
