@@ -60,47 +60,70 @@ namespace Arro.UITweaks
                         num2 -= 1U;
                     }
                 }
+                if (childCount == 1 && instance.mCurrent == mFilteredRoot)
+                {
+                    instance.mHeadSceneWindow.Visible = false;
+                    Vector2 cursorPos = UIManager.GetCursorPosition();
+                    Vector2 containerPos = instance.mContainer.ScreenToWindow(cursorPos);
+                    Window button = instance.mItemButtons[0];
+                    Rect buttonArea = button.Area;
+                    float buttonWidth = buttonArea.Width;
+                    float buttonHeight = buttonArea.Height;
 
-                float num3 = 0f;
-                float num4 = 0f;
-                Rect area = UIManager.GetMainWindow().Area;
-                if (a.TopLeft.x < area.TopLeft.x)
-                {
-                    num3 = area.TopLeft.x - a.TopLeft.x;
+                    buttonArea.TopLeft = new Vector2(
+                        containerPos.x - (buttonWidth / 2f),
+                        containerPos.y - (buttonHeight / 2f)
+                    );
+                    buttonArea.BottomRight = new Vector2(
+                        buttonArea.TopLeft.x + buttonWidth,
+                        buttonArea.TopLeft.y + buttonHeight
+                    );
+                    button.Area = buttonArea;
                 }
-                else if (a.BottomRight.x > area.BottomRight.x)
+                else
                 {
-                    num3 = area.BottomRight.x - a.BottomRight.x;
-                }
-
-                if (a.TopLeft.y < area.TopLeft.y)
-                {
-                    num4 = area.TopLeft.y - a.TopLeft.y;
-                }
-                else if (a.BottomRight.y > area.BottomRight.y)
-                {
-                    num4 = area.BottomRight.y - a.BottomRight.y;
-                }
-                instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
-                
-
-                Rect rect = new Rect(a.TopLeft - instance.mPieMenuHitMaskPadding,
-                    a.BottomRight + instance.mPieMenuHitMaskPadding);
-                rect = Rect.Offset(rect, num3, num4);
-                instance.mPieMenuHitMask.Area = rect;
-                if (num3 != 0f || num4 != 0f)
-                {
-                    for (num2 = 0U; num2 < childCount; num2 += 1U)
+                    instance.mHeadSceneWindow.Visible = true;
+                    float num3 = 0f;
+                    float num4 = 0f;
+                    Rect area = UIManager.GetMainWindow().Area;
+                    if (a.TopLeft.x < area.TopLeft.x)
                     {
-                        uint num5 = instance.mButtonIndices[(int)((UIntPtr)num2)];
-                        Rect area2 = Rect.Offset(instance.mItemButtons[(int)((UIntPtr)num5)].Area, num3, num4);
-                        instance.mItemButtons[(int)((UIntPtr)num5)].Area = area2;
+                        num3 = area.TopLeft.x - a.TopLeft.x;
+                    }
+                    else if (a.BottomRight.x > area.BottomRight.x)
+                    {
+                        num3 = area.BottomRight.x - a.BottomRight.x;
                     }
 
-                    Rect area3 = Rect.Offset(instance.mItemButtons[(int)((UIntPtr)12)].Area, num3, num4);
-                    instance.mItemButtons[(int)((UIntPtr)12)].Area = area3;
-                    UIManager.SetCursorPosition(instance.mItemButtons[(int)((UIntPtr)12)].Parent
-                        .WindowToScreen(instance.mPositionStack[instance.mPositionStackPtr]));
+                    if (a.TopLeft.y < area.TopLeft.y)
+                    {
+                        num4 = area.TopLeft.y - a.TopLeft.y;
+                    }
+                    else if (a.BottomRight.y > area.BottomRight.y)
+                    {
+                        num4 = area.BottomRight.y - a.BottomRight.y;
+                    }
+                    instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
+                
+
+                    Rect rect = new Rect(a.TopLeft - instance.mPieMenuHitMaskPadding,
+                        a.BottomRight + instance.mPieMenuHitMaskPadding);
+                    rect = Rect.Offset(rect, num3, num4);
+                    instance.mPieMenuHitMask.Area = rect;
+                    if (num3 != 0f || num4 != 0f)
+                    {
+                        for (num2 = 0U; num2 < childCount; num2 += 1U)
+                        {
+                            uint num5 = instance.mButtonIndices[(int)((UIntPtr)num2)];
+                            Rect area2 = Rect.Offset(instance.mItemButtons[(int)((UIntPtr)num5)].Area, num3, num4);
+                            instance.mItemButtons[(int)((UIntPtr)num5)].Area = area2;
+                        }
+
+                        Rect area3 = Rect.Offset(instance.mItemButtons[(int)((UIntPtr)12)].Area, num3, num4);
+                        instance.mItemButtons[(int)((UIntPtr)12)].Area = area3;
+                        UIManager.SetCursorPosition(instance.mItemButtons[(int)((UIntPtr)12)].Parent
+                            .WindowToScreen(instance.mPositionStack[instance.mPositionStackPtr]));
+                    }
                 }
 
                 for (num2 = 0U; num2 < childCount; num2 += 1U)
@@ -108,25 +131,10 @@ namespace Arro.UITweaks
                     uint num6 = instance.mButtonIndices[(int)((UIntPtr)num2)];
                     instance.mItemButtons[(int)((UIntPtr)num6)].Visible = true;
                 }
-
-                if (instance.mCurrent == instance.mTree.mRoot || instance.mCurrent == mFilteredRoot)
-                {
-                    if (instance.mHeadObjectGuid.IsValid && instance.mHeadSceneWindow != null)
-                    {
-                        instance.mHeadSceneWindow.Visible = true;
-                    }
-                }
-                else
-                {
-                    if (instance.mHeadSceneWindow != null)
-                    {
-                        instance.mHeadSceneWindow.Visible = false;
-                    }
-                }
                 TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
                 if (searchTextEdit != null)
                 {
-                    UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit); //Set focus to search box
+                    UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit);
                     Window firstButton = instance.mItemButtons[0];
                     Vector2 position = firstButton.Area.TopLeft;
                     Vector2 screenPosition = instance.mContainer.WindowToScreen(position);
@@ -134,7 +142,7 @@ namespace Arro.UITweaks
                     float searchWidth = searchTextEdit.Area.Width;
                     searchTextEdit.Position = new Vector2(
                         centerX - (searchWidth * 0.5f),
-                        screenPosition.y - 40f
+                        screenPosition.y - 20f
                     );
                 }
             }
@@ -197,7 +205,7 @@ namespace Arro.UITweaks
         {
             var instance = (PieMenu)(this as object);
             string query = (sender as TextEdit).Caption;
-            
+            Audio.StartSound("ui_primary_button");
             Rect currentArea = sender.Area;
             Vector2 topLeft = currentArea.TopLeft;
             
@@ -340,7 +348,7 @@ namespace Arro.UITweaks
                 if (newRoot.ChildCount == 0)
                 {
                     var instance = (PieMenu)(this as object);
-                    Sims3.Gameplay.UI.PieMenu.ShowGreyedOutTooltip(Localization.LocalizeString("Gameplay/Abstracts/GameObject:NoInteractions", new object[0]), pieMenu.mPositionStack[pieMenu.mPositionStackPtr]);
+                    Sims3.Gameplay.UI.PieMenu.ShowGreyedOutTooltip(Localization.LocalizeString("Gameplay/Abstracts/GameObject:NoInteractions", new object[0]), UIManager.GetCursorPosition());
                     TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
                     searchTextEdit.Caption = searchTextEdit.Caption.Substring(0, searchTextEdit.Caption.Length - 1);
                     return;
@@ -351,7 +359,6 @@ namespace Arro.UITweaks
                 ExceptionHandler.HandleException(ex, "FilterMenuItemsShowGreyedOutTooltip");
                 return;
             }
-
             try
             {
                 mFilteredRoot = pieMenu.ValidateMenuStructure(newRoot);
@@ -426,6 +433,20 @@ namespace Arro.UITweaks
                 Audio.StartSound("ui_build_cancel");
                 PieMenu.Hide();
                 eventArgs.Handled = true;
+            }
+            if (114345171U == eventArgs.TriggerCode && PieMenu.IsVisible)
+            {
+                var pieMenu = (PieMenu)(this as object);
+                if (pieMenu.mCurrent == mFilteredRoot && pieMenu.mCurrent.ChildCount == 1)
+                {
+                    if (pieMenu.mCurrent[0].ChildCount == 0)
+                    {
+                        pieMenu.SelectItem(pieMenu.mCurrent[0]);
+                        Audio.StartSound("ui_piemenu_secondary");
+                        PieMenu.Hide();
+                        eventArgs.Handled = true;
+                    }
+                }
             }
         }
         private string RemoveDiacritics(string text)
