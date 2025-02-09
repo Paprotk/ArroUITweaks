@@ -17,6 +17,7 @@ namespace Arro.UITweaks
         {
             ResourceKey resKey = ResourceKey.CreateUILayoutKey("HUDPieMenuPatch", 0U);
             PieMenu.sLayout = UIManager.LoadLayoutAndAddToWindow(resKey, UICategory.PieMenu);
+            PieMenu.sInstance.mPositionStack = new Vector2[1000];
         }
 
         [ReplaceMethod(typeof(PieMenu), "SetupPieMenuButtons")]
@@ -80,17 +81,8 @@ namespace Arro.UITweaks
                 {
                     num4 = area.BottomRight.y - a.BottomRight.y;
                 }
-
-                // FIX: Check if current menu is filtered root before incrementing stack pointer
-                if (instance.mCurrent == mFilteredRoot)
-                {
-                    // Overwrite current position without incrementing pointer
-                    instance.mPositionStack[instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
-                }
-                else
-                {
-                    instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
-                }
+                instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
+                
 
                 Rect rect = new Rect(a.TopLeft - instance.mPieMenuHitMaskPadding,
                     a.BottomRight + instance.mPieMenuHitMaskPadding);
@@ -131,30 +123,19 @@ namespace Arro.UITweaks
                         instance.mHeadSceneWindow.Visible = false;
                     }
                 }
-                // Position the search TextEdit above the first button
-
                 TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
-
                 if (searchTextEdit != null)
-
                 {
+                    UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit); //Set focus to search box
                     Window firstButton = instance.mItemButtons[0];
-
                     Vector2 position = firstButton.Area.TopLeft;
-
                     Vector2 screenPosition = instance.mContainer.WindowToScreen(position);
-
-
                     float centerX = screenPosition.x + (firstButton.Area.Width * 0.5f);
-
                     float searchWidth = searchTextEdit.Area.Width;
-
                     searchTextEdit.Position = new Vector2(
                         centerX - (searchWidth * 0.5f),
-                        screenPosition.y - 40f // Adjust vertical position as needed
+                        screenPosition.y - 40f
                     );
-
-                    searchTextEdit.Visible = true;
                 }
             }
             catch (Exception ex)
@@ -180,6 +161,7 @@ namespace Arro.UITweaks
             {
                 searchTextEdit.Caption = "";
                 searchTextEdit.TextChange += OnTextChange;
+                searchTextEdit.Visible = true;
                 searchTextEdit.HideCaret = true;
                 UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit);
             }
@@ -211,26 +193,23 @@ namespace Arro.UITweaks
             UIManager.PopModal(instance);
         }
 
-        private void OnTextChange(WindowBase sender, UITextChangeEventArgs eventargs)
+        private void OnTextChange(WindowBase sender, UITextChangeEventArgs eventArgs)
         {
             var instance = (PieMenu)(this as object);
             string query = (sender as TextEdit).Caption;
-    
-            // Get the current position of the UI element
+            
             Rect currentArea = sender.Area;
             Vector2 topLeft = currentArea.TopLeft;
-
-            // Calculate new width/height
+            
             int characterCount = query.Length;
-            float width = 7.5f * characterCount;
+            float width = 8f * characterCount;
             float height = 17f;
-
-            // Create a new Rect with the SAME POSITION but updated size
+            
             sender.Area = new Rect(
-                topLeft.x,          // Keep original X position
-                topLeft.y,          // Keep original Y position
-                topLeft.x + width,  // New right edge (position + width)
-                topLeft.y + height  // New bottom edge (position + height)
+                topLeft.x,
+                topLeft.y,
+                topLeft.x + width,
+                topLeft.y + height 
             );
 
             if (string.IsNullOrEmpty(query))
@@ -248,23 +227,22 @@ namespace Arro.UITweaks
 
         private void FilterMenuItems(PieMenu pieMenu, string query)
         {
-            MenuItem originalRoot = null;
-            List<MenuItem> allItems = null;
+            List<MenuItem> allItems;
 
             try
             {
                 mFilteredRoot = null;
-                originalRoot = pieMenu.mTree.mRoot;
+                var originalRoot = pieMenu.mTree.mRoot;
                 allItems = new List<MenuItem>();
                 FlattenMenuItems(originalRoot, allItems);
             }
             catch (Exception ex)
             {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsInitialsetup");
-                return; // Exit if initial setup fails
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsInitialSetup");
+                return;
             }
 
-            MenuItem newRoot = null;
+            MenuItem newRoot;
 
             try
             {
@@ -272,21 +250,20 @@ namespace Arro.UITweaks
             }
             catch (Exception ex)
             {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsCreatenewRoot");
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsCreateNewRoot");
                 return;
             }
 
-            string normalizedQuery = null;
-            string[] queryWords = null;
+            string[] queryWords;
 
             try
             {
-                normalizedQuery = RemoveDiacritics(query.ToLowerInvariant());
+                var normalizedQuery = RemoveDiacritics(query.ToLowerInvariant());
                 queryWords = normalizedQuery.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
             }
             catch (Exception ex)
             {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessquery");
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessQuery");
                 return;
             }
 
@@ -296,18 +273,17 @@ namespace Arro.UITweaks
                 {
                     if (item.mStyle == MenuItem.Style.More) continue;
 
-                    string normalizedItemName = null;
-                    string[] itemWords = null;
+                    string[] itemWords;
 
                     try
                     {
-                        normalizedItemName = RemoveDiacritics(item.mName.ToLowerInvariant());
+                        var normalizedItemName = RemoveDiacritics(item.mName.ToLowerInvariant());
                         itemWords = normalizedItemName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                     }
                     catch (Exception ex)
                     {
-                        ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessitem name");
-                        continue; // Skip this item if processing fails
+                        ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessItemName");
+                        continue;
                     }
 
                     bool allQueryWordsMatched = true;
@@ -336,8 +312,8 @@ namespace Arro.UITweaks
                     }
                     catch (Exception ex)
                     {
-                        ExceptionHandler.HandleException(ex, "FilterMenuItemsCheckquery words");
-                        allQueryWordsMatched = false; // Treat as not matched if an error occurs
+                        ExceptionHandler.HandleException(ex, "FilterMenuItemsCheckQueryWords");
+                        allQueryWordsMatched = false;
                     }
 
                     if (allQueryWordsMatched)
@@ -349,14 +325,14 @@ namespace Arro.UITweaks
                         }
                         catch (Exception ex)
                         {
-                            ExceptionHandler.HandleException(ex, "FilterMenuItemsAddcloned item");
+                            ExceptionHandler.HandleException(ex, "FilterMenuItemsCloneMenuItem");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsLoopthrough items");
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsMainLoops");
             }
 
             try
@@ -372,7 +348,7 @@ namespace Arro.UITweaks
             }
             catch (Exception ex)
             {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsCheckfornoresults");
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsShowGreyedOutTooltip");
                 return;
             }
 
@@ -382,7 +358,7 @@ namespace Arro.UITweaks
             }
             catch (Exception ex)
             {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsValidatemenustructure");
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsValidateMenuStructure");
                 return;
             }
 
@@ -393,7 +369,7 @@ namespace Arro.UITweaks
             }
             catch (Exception ex)
             {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsUpdatepieMenu");
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsSetupPieMenuButtons");
             }
         }
 
@@ -404,7 +380,7 @@ namespace Arro.UITweaks
                 mName = original.mName,
                 mTag = original.mTag,
                 mStyle = original.mStyle,
-                mTree = original.mTree, // Maintain tree reference
+                mTree = original.mTree,
                 mIconKey = original.mIconKey,
                 mIconStyle = original.mIconStyle,
                 mIconThumbnailKey = original.mIconThumbnailKey,
@@ -420,7 +396,7 @@ namespace Arro.UITweaks
             foreach (MenuItem child in original.mChildren)
             {
                 MenuItem clonedChild = CloneMenuItem(child);
-                clone.AddChild(clonedChild); // Ensure proper child addition
+                clone.AddChild(clonedChild);
             }
 
             return clone;
@@ -451,32 +427,7 @@ namespace Arro.UITweaks
                 PieMenu.Hide();
                 eventArgs.Handled = true;
             }
-
-            if (114345171U == eventArgs.TriggerCode && PieMenu.IsVisible)
-            {
-                var pieMenu = (PieMenu)(this as object);
-                Simulator.AddObject(new OneShotFunctionTask(() => { ShowCurrentButtonCount(pieMenu); },
-                    StopWatch.TickStyles.Seconds, 0.1f));
-            }
         }
-
-        public void ShowCurrentButtonCount(PieMenu pieMenu)
-        {
-            try
-            {
-                // Get the current button count from the pie menu
-                uint buttonCount = pieMenu.mButtonCount;
-
-                // Show the button count in a dialog
-                SimpleMessageDialog.Show("Current Button Count", $"The current button count is: {buttonCount}");
-            }
-            catch (Exception ex)
-            {
-                // Handle any exceptions that might occur
-                ExceptionHandler.HandleException(ex, "ShowCurrentButtonCount");
-            }
-        }
-
         private string RemoveDiacritics(string text)
         {
             var normalizedString = text.Normalize(NormalizationForm.FormD);
