@@ -17,132 +17,163 @@ namespace Arro.UITweaks
             ResourceKey resKey = ResourceKey.CreateUILayoutKey("HUDPieMenuPatch", 0U);
             PieMenu.sLayout = UIManager.LoadLayoutAndAddToWindow(resKey, UICategory.PieMenu);
         }
+
         [ReplaceMethod(typeof(PieMenu), "SetupPieMenuButtons")]
         public void SetupPieMenuButtons(MenuItem menu, Vector2 origin, bool returnButtonVisible)
         {
-            var instance = (PieMenu)(this as object);
-            uint childCount = (uint)menu.ChildCount;
-            int num = returnButtonVisible ? 12 : 13;
-            for (int i = 0; i < num; i++)
+            try
             {
-                instance.mItemButtons[i].Visible = false;
-                instance.mItemButtons[i].Tag = null;
-            }
-
-            instance.mObjectPickerPanel.Visible = false;
-            instance.mPieMenuContainer.Visible = true;
-            Vector2[] array = new Vector2[childCount];
-            instance.ComputeRadialLocations(ref array, childCount);
-            instance.DetermineButtonIndices(ref array, childCount);
-            instance.mButtonCount = childCount;
-            Rect a = new Rect(float.MaxValue, float.MaxValue, float.MinValue, float.MinValue);
-            uint num2 = 0U;
-            foreach (object obj in menu)
-            {
-                MenuItem item = (MenuItem)obj;
-                if (num2 == 0U)
+                var instance = (PieMenu)(this as object);
+                uint childCount = (uint)menu.ChildCount;
+                StyledNotification.Show(new StyledNotification.Format(childCount.ToString(),
+                    StyledNotification.NotificationStyle.kGameMessagePositive));
+                int num = returnButtonVisible ? 12 : 13;
+                for (int i = 0; i < num; i++)
                 {
-                    Rect b = instance.SetupButton(item, instance.mButtonIndices[(int)((UIntPtr)num2)], origin,
-                        array[(int)((UIntPtr)num2)]);
-                    a = Rect.Union(a, b);
-                    num2 = instance.mButtonCount - 1U;
+                    instance.mItemButtons[i].Visible = false;
+                    instance.mItemButtons[i].Tag = null;
+                }
+
+                instance.mObjectPickerPanel.Visible = false;
+                instance.mPieMenuContainer.Visible = true;
+                Vector2[] array = new Vector2[childCount];
+                instance.ComputeRadialLocations(ref array, childCount);
+                instance.DetermineButtonIndices(ref array, childCount);
+                instance.mButtonCount = childCount;
+                Rect a = new Rect(float.MaxValue, float.MaxValue, float.MinValue, float.MinValue);
+                uint num2 = 0U;
+                foreach (object obj in menu)
+                {
+                    MenuItem item = (MenuItem)obj;
+                    if (num2 == 0U)
+                    {
+                        Rect b = instance.SetupButton(item, instance.mButtonIndices[(int)((UIntPtr)num2)], origin,
+                            array[(int)((UIntPtr)num2)]);
+                        a = Rect.Union(a, b);
+                        num2 = instance.mButtonCount - 1U;
+                    }
+                    else
+                    {
+                        Rect b2 = instance.SetupButton(item, instance.mButtonIndices[(int)((UIntPtr)num2)], origin,
+                            array[(int)((UIntPtr)num2)]);
+                        a = Rect.Union(a, b2);
+                        num2 -= 1U;
+                    }
+                }
+
+                float num3 = 0f;
+                float num4 = 0f;
+                Rect area = UIManager.GetMainWindow().Area;
+                if (a.TopLeft.x < area.TopLeft.x)
+                {
+                    num3 = area.TopLeft.x - a.TopLeft.x;
+                }
+                else if (a.BottomRight.x > area.BottomRight.x)
+                {
+                    num3 = area.BottomRight.x - a.BottomRight.x;
+                }
+
+                if (a.TopLeft.y < area.TopLeft.y)
+                {
+                    num4 = area.TopLeft.y - a.TopLeft.y;
+                }
+                else if (a.BottomRight.y > area.BottomRight.y)
+                {
+                    num4 = area.BottomRight.y - a.BottomRight.y;
+                }
+
+                instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
+                Rect rect = new Rect(a.TopLeft - instance.mPieMenuHitMaskPadding,
+                    a.BottomRight + instance.mPieMenuHitMaskPadding);
+                rect = Rect.Offset(rect, num3, num4);
+                instance.mPieMenuHitMask.Area = rect;
+                if (num3 != 0f || num4 != 0f)
+                {
+                    for (num2 = 0U; num2 < childCount; num2 += 1U)
+                    {
+                        uint num5 = instance.mButtonIndices[(int)((UIntPtr)num2)];
+                        Rect area2 = Rect.Offset(instance.mItemButtons[(int)((UIntPtr)num5)].Area, num3, num4);
+                        instance.mItemButtons[(int)((UIntPtr)num5)].Area = area2;
+                    }
+
+                    Rect area3 = Rect.Offset(instance.mItemButtons[(int)((UIntPtr)12)].Area, num3, num4);
+                    instance.mItemButtons[(int)((UIntPtr)12)].Area = area3;
+                    UIManager.SetCursorPosition(instance.mItemButtons[(int)((UIntPtr)12)].Parent
+                        .WindowToScreen(instance.mPositionStack[instance.mPositionStackPtr]));
+                }
+
+                for (num2 = 0U; num2 < childCount; num2 += 1U)
+                {
+                    uint num6 = instance.mButtonIndices[(int)((UIntPtr)num2)];
+                    instance.mItemButtons[(int)((UIntPtr)num6)].Visible = true;
+                }
+
+                if (instance.mCurrent == instance.mTree.mRoot || instance.mCurrent == mFilteredRoot)
+                {
+                    if (instance.mHeadObjectGuid.IsValid && instance.mHeadSceneWindow != null)
+                    {
+                        instance.mHeadSceneWindow.Visible = true;
+                    }
                 }
                 else
                 {
-                    Rect b2 = instance.SetupButton(item, instance.mButtonIndices[(int)((UIntPtr)num2)], origin,
-                        array[(int)((UIntPtr)num2)]);
-                    a = Rect.Union(a, b2);
-                    num2 -= 1U;
+                    if (instance.mHeadSceneWindow != null)
+                    {
+                        instance.mHeadSceneWindow.Visible = false;
+                    }
                 }
-            }
-            float num3 = 0f;
-            float num4 = 0f;
-            Rect area = UIManager.GetMainWindow().Area;
-            if (a.TopLeft.x < area.TopLeft.x)
-            {
-                num3 = area.TopLeft.x - a.TopLeft.x;
-            }
-            else if (a.BottomRight.x > area.BottomRight.x)
-            {
-                num3 = area.BottomRight.x - a.BottomRight.x;
-            }
+                // Position the search TextEdit above the first button
 
-            if (a.TopLeft.y < area.TopLeft.y)
-            {
-                num4 = area.TopLeft.y - a.TopLeft.y;
-            }
-            else if (a.BottomRight.y > area.BottomRight.y)
-            {
-                num4 = area.BottomRight.y - a.BottomRight.y;
-            }
-            instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
-            Rect rect = new Rect(a.TopLeft - instance.mPieMenuHitMaskPadding,
-                a.BottomRight + instance.mPieMenuHitMaskPadding);
-            rect = Rect.Offset(rect, num3, num4);
-            instance.mPieMenuHitMask.Area = rect;
-            if (num3 != 0f || num4 != 0f)
-            {
-                for (num2 = 0U; num2 < childCount; num2 += 1U)
+                TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
+
+                if (searchTextEdit != null)
+
                 {
-                    uint num5 = instance.mButtonIndices[(int)((UIntPtr)num2)];
-                    Rect area2 = Rect.Offset(instance.mItemButtons[(int)((UIntPtr)num5)].Area, num3, num4);
-                    instance.mItemButtons[(int)((UIntPtr)num5)].Area = area2;
-                }
+                    Window firstButton = instance.mItemButtons[0];
 
-                Rect area3 = Rect.Offset(instance.mItemButtons[(int)((UIntPtr)12)].Area, num3, num4);
-                instance.mItemButtons[(int)((UIntPtr)12)].Area = area3;
-                UIManager.SetCursorPosition(instance.mItemButtons[(int)((UIntPtr)12)].Parent
-                    .WindowToScreen(instance.mPositionStack[instance.mPositionStackPtr]));
-            }
+                    Vector2 position = firstButton.Area.TopLeft;
 
-            for (num2 = 0U; num2 < childCount; num2 += 1U)
-            {
-                uint num6 = instance.mButtonIndices[(int)((UIntPtr)num2)];
-                instance.mItemButtons[(int)((UIntPtr)num6)].Visible = true;
-            }
-            if (instance.mCurrent == instance.mTree.mRoot || instance.mCurrent == mFilteredRoot)
-            {
-                if (instance.mHeadObjectGuid.IsValid && instance.mHeadSceneWindow != null)
-                {
-                    instance.mHeadSceneWindow.Visible = true;
+                    Vector2 screenPosition = instance.mContainer.WindowToScreen(position);
+
+
+                    float centerX = screenPosition.x + (firstButton.Area.Width * 0.5f);
+
+                    float searchWidth = searchTextEdit.Area.Width;
+
+                    searchTextEdit.Position = new Vector2(
+                        centerX - (searchWidth * 0.5f),
+                        screenPosition.y - 40f // Adjust vertical position as needed
+                    );
+
+                    searchTextEdit.Visible = true;
                 }
             }
-            else
+            catch (Exception ex)
             {
-                if (instance.mHeadSceneWindow != null)
-                {
-                    instance.mHeadSceneWindow.Visible = false;
-                }
+                ExceptionHandler.HandleException(ex, "SetupPieMenuButtons");
             }
-            //Update search button position based on container position
-            Window firstButton = instance.mItemButtons[0];
-            Vector2 position = firstButton.Area.TopLeft;
-            Vector2 screenPosition = instance.mContainer.WindowToScreen(position);
-
-            // Get the horizontal center of the first button
-            float firstButtonCenterX = screenPosition.x + (firstButton.Area.Width * 0.5f);
-
-            // Center searchButton horizontally
-            Button searchButton = (instance.GetChildByID(185745581U, true) as Button);
-            searchButton.Position = new Vector2(
-                firstButtonCenterX - (searchButton.Area.Width * 0.5f),
-                screenPosition.y - 40f
-            );
         }
+
         [ReplaceMethod(typeof(PieMenu), "Begin")]
         public void Begin(MenuTree tree, Vector2 location)
         {
             var instance = (PieMenu)(this as object);
-            instance.mTriggerHandle = instance.mContainer.AddTriggerHook("piemenu", TriggerActivationMode.kPermanent, 1);
+            instance.mTriggerHandle =
+                instance.mContainer.AddTriggerHook("piemenu", TriggerActivationMode.kPermanent, 1);
             instance.mContainer.TriggerDown += instance.OnTriggerDown;
             instance.mTree = tree;
             instance.mCurrent = instance.ValidateMenuStructure(tree.mRoot);
             instance.SetupPieMenuButtons(instance.mCurrent, location, false);
             instance.mCurrentButtonSelected = -1;
             instance.mContainer.Visible = true;
-            Button searchButton = (instance.GetChildByID(185745581U, true) as Button);
-            searchButton.Click += OnClickShowSearchDialog;
-            searchButton.Visible = true;
+            TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
+            if (searchTextEdit != null)
+            {
+                searchTextEdit.Caption = "";
+                searchTextEdit.TextChange += OnTextChange;
+                UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit);
+            }
+
             Audio.StartSound("ui_piemenu_primary");
             UIManager.PushModal(instance);
         }
@@ -152,12 +183,17 @@ namespace Arro.UITweaks
         {
             var instance = (PieMenu)(this as object);
             instance.mContainer.RemoveTriggerHook(instance.mTriggerHandle);
+            TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
+            if (searchTextEdit != null)
+            {
+                searchTextEdit.TextChange -= OnTextChange;
+                searchTextEdit.Visible = false;
+            }
+
             instance.mContainer.TriggerDown -= instance.OnTriggerDown;
             instance.mTree = null;
             instance.mCurrent = null;
             mFilteredRoot = null;
-            Button searchButton = (instance.GetChildByID(185745581U, true) as Button);
-            searchButton.Click -= OnClickShowSearchDialog;
             instance.mContainer.Visible = false;
             instance.mPositionStackPtr = -1;
             instance.mReturnButtonStackPtr = -1;
@@ -166,106 +202,186 @@ namespace Arro.UITweaks
             UIManager.PopModal(instance);
         }
 
-        public void OnClickShowSearchDialog(WindowBase sender, UIButtonClickEventArgs args)
+        private void OnTextChange(WindowBase sender, UITextChangeEventArgs eventargs)
         {
-            try
+            var instance = (PieMenu)(this as object);
+            string query = (sender as TextEdit).Caption;
+
+            if (string.IsNullOrEmpty(query))
             {
-                var pieMenu = (PieMenu)(this as object);
-                Simulator.AddObject(new OneShotFunctionTask(() => { ShowSearchDialog(pieMenu); },
-                    StopWatch.TickStyles.Seconds, 0.1f));
+                instance.mCurrent = instance.ValidateMenuStructure(instance.mTree.mRoot);
+                instance.SetupPieMenuButtons(instance.mCurrent, instance.mPositionStack[instance.mPositionStackPtr],
+                    false);
             }
-            catch (Exception ex)
+            else
             {
-                ExceptionHandler.HandleException(ex, "OnClickShowSearchDialog");
+                FilterMenuItems(instance, query);
             }
         }
-        
-        private void ShowSearchDialog(PieMenu pieMenu)
-        {
-            try
-            {
-                string result = StringInputDialog.Show("Search Interactions", "Enter search term:", "", false);
-                if (!string.IsNullOrEmpty(result))
-                {
-                    FilterMenuItems(pieMenu, result);
-                }
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "ShowSearchDialog");
-            }
-        }
+
         private MenuItem mFilteredRoot;
 
         private void FilterMenuItems(PieMenu pieMenu, string query)
         {
+            MenuItem originalRoot = null;
+            List<MenuItem> allItems = null;
+
             try
             {
-                MenuItem originalRoot = pieMenu.mTree.mRoot;
-                List<MenuItem> allItems = new List<MenuItem>();
+                mFilteredRoot = null;
+                originalRoot = pieMenu.mTree.mRoot;
+                allItems = new List<MenuItem>();
                 FlattenMenuItems(originalRoot, allItems);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsInitialsetup");
+                return; // Exit if initial setup fails
+            }
 
-                MenuItem newRoot = new MenuItem
-                {
-                    mTree = pieMenu.mTree
-                };
+            MenuItem newRoot = null;
 
-                // Normalize query and split into words
-                string normalizedQuery = RemoveDiacritics(query.ToLowerInvariant());
-                string[] queryWords = normalizedQuery.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            try
+            {
+                newRoot = new MenuItem { mTree = pieMenu.mTree };
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsCreatenewRoot");
+                return;
+            }
 
+            string normalizedQuery = null;
+            string[] queryWords = null;
+
+            try
+            {
+                normalizedQuery = RemoveDiacritics(query.ToLowerInvariant());
+                queryWords = normalizedQuery.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessquery");
+                return;
+            }
+
+            try
+            {
                 foreach (MenuItem item in allItems)
                 {
-                    if (item.mStyle == MenuItem.Style.More)
-                        continue;
+                    if (item.mStyle == MenuItem.Style.More) continue;
 
-                    // Normalize item name and split into words
-                    string normalizedItemName = RemoveDiacritics(item.mName.ToLowerInvariant());
-                    string[] itemWords = normalizedItemName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    string normalizedItemName = null;
+                    string[] itemWords = null;
 
-                    // Check if all query words are matched
-                    bool allQueryWordsMatched = true;
-                    foreach (string qWord in queryWords)
+                    try
                     {
-                        bool wordMatched = false;
-                        foreach (string iWord in itemWords)
+                        normalizedItemName = RemoveDiacritics(item.mName.ToLowerInvariant());
+                        itemWords = normalizedItemName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    }
+                    catch (Exception ex)
+                    {
+                        ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessitem name");
+                        continue; // Skip this item if processing fails
+                    }
+
+                    bool allQueryWordsMatched = true;
+
+                    try
+                    {
+                        foreach (string qWord in queryWords)
                         {
-                            if (iWord.StartsWith(qWord))
+                            bool wordMatched = false;
+
+                            foreach (string iWord in itemWords)
                             {
-                                wordMatched = true;
+                                if (iWord.StartsWith(qWord))
+                                {
+                                    wordMatched = true;
+                                    break;
+                                }
+                            }
+
+                            if (!wordMatched)
+                            {
+                                allQueryWordsMatched = false;
                                 break;
                             }
                         }
-                        if (!wordMatched)
-                        {
-                            allQueryWordsMatched = false;
-                            break;
-                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ExceptionHandler.HandleException(ex, "FilterMenuItemsCheckquery words");
+                        allQueryWordsMatched = false; // Treat as not matched if an error occurs
                     }
 
                     if (allQueryWordsMatched)
                     {
-                        // Clone the original item including its children
-                        MenuItem clonedItem = CloneMenuItem(item);
-                        newRoot.AddChild(clonedItem);
+                        try
+                        {
+                            MenuItem clonedItem = CloneMenuItem(item);
+                            newRoot.AddChild(clonedItem);
+                        }
+                        catch (Exception ex)
+                        {
+                            ExceptionHandler.HandleException(ex, "FilterMenuItemsAddcloned item");
+                        }
                     }
                 }
-
-                if (newRoot.ChildCount == 0)
-                {
-                    SimpleMessageDialog.Show("Error", $"No results found for '{query}'");
-                    return;
-                }
-
-                mFilteredRoot = newRoot;
-                pieMenu.mCurrent = newRoot;
-                pieMenu.SetupPieMenuButtons(newRoot, pieMenu.mPositionStack[pieMenu.mPositionStackPtr], false);
             }
             catch (Exception ex)
             {
-                ExceptionHandler.HandleException(ex, "FilterMenuItems");
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsLoopthrough items");
+            }
+
+            try
+            {
+                if (newRoot.ChildCount == 0)
+                {
+                    SimpleMessageDialog.Show("No Results", $"No interactions found for '{query}'.");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsCheckfornoresults");
+                return;
+            }
+
+            try
+            {
+                mFilteredRoot = pieMenu.ValidateMenuStructure(newRoot);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsValidatemenustructure");
+                return;
+            }
+
+            try
+            {
+                if (mFilteredRoot.ChildCount > 12)
+                {
+                    SimpleMessageDialog.Show("Validation Error",
+                        $"Filtered menu still has {mFilteredRoot.ChildCount} items after validation!");
+                }
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsDebugcheck");
+            }
+
+            try
+            {
+                pieMenu.mCurrent = mFilteredRoot;
+                pieMenu.SetupPieMenuButtons(mFilteredRoot, pieMenu.mPositionStack[pieMenu.mPositionStackPtr], false);
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.HandleException(ex, "FilterMenuItemsUpdatepieMenu");
             }
         }
+
         private MenuItem CloneMenuItem(MenuItem original)
         {
             MenuItem clone = new MenuItem
@@ -273,7 +389,7 @@ namespace Arro.UITweaks
                 mName = original.mName,
                 mTag = original.mTag,
                 mStyle = original.mStyle,
-                mTree = original.mTree,
+                mTree = original.mTree, // Maintain tree reference
                 mIconKey = original.mIconKey,
                 mIconStyle = original.mIconStyle,
                 mIconThumbnailKey = original.mIconThumbnailKey,
@@ -289,7 +405,7 @@ namespace Arro.UITweaks
             foreach (MenuItem child in original.mChildren)
             {
                 MenuItem clonedChild = CloneMenuItem(child);
-                clone.AddChild(clonedChild);
+                clone.AddChild(clonedChild); // Ensure proper child addition
             }
 
             return clone;
@@ -310,6 +426,7 @@ namespace Arro.UITweaks
                 ExceptionHandler.HandleException(ex, "FilterMenuItems");
             }
         }
+
         [ReplaceMethod(typeof(PieMenu), "OnTriggerDown")]
         public void OnTriggerDown(WindowBase sender, UITriggerEventArgs eventArgs)
         {
@@ -319,13 +436,32 @@ namespace Arro.UITweaks
                 PieMenu.Hide();
                 eventArgs.Handled = true;
             }
+
             if (114345171U == eventArgs.TriggerCode && PieMenu.IsVisible)
             {
                 var pieMenu = (PieMenu)(this as object);
-                Simulator.AddObject(new OneShotFunctionTask(() => { ShowSearchDialog(pieMenu); },
+                Simulator.AddObject(new OneShotFunctionTask(() => { ShowCurrentButtonCount(pieMenu); },
                     StopWatch.TickStyles.Seconds, 0.1f));
             }
         }
+
+        public void ShowCurrentButtonCount(PieMenu pieMenu)
+        {
+            try
+            {
+                // Get the current button count from the pie menu
+                uint buttonCount = pieMenu.mButtonCount;
+
+                // Show the button count in a dialog
+                SimpleMessageDialog.Show("Current Button Count", $"The current button count is: {buttonCount}");
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that might occur
+                ExceptionHandler.HandleException(ex, "ShowCurrentButtonCount");
+            }
+        }
+
         private string RemoveDiacritics(string text)
         {
             var normalizedString = text.Normalize(NormalizationForm.FormD);
@@ -334,7 +470,7 @@ namespace Arro.UITweaks
             foreach (var c in normalizedString)
             {
                 var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
-                
+
                 if (c == 'ł')
                 {
                     stringBuilder.Append('l');
