@@ -439,7 +439,7 @@ namespace Arro.UITweaks
                 var pieMenu = (PieMenu)(this as object);
                 if (pieMenu.mCurrent == mFilteredRoot && pieMenu.mCurrent.ChildCount == 1)
                 {
-                    if (pieMenu.mCurrent[0].ChildCount == 0)
+                    if (pieMenu.mCurrent[0].ChildCount == 0 && pieMenu.mCurrent[0].mStyle != MenuItem.Style.Disabled)
                     {
                         pieMenu.SelectItem(pieMenu.mCurrent[0]);
                         Audio.StartSound("ui_piemenu_secondary");
