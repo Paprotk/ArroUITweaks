@@ -222,7 +222,7 @@ namespace Arro.UITweaks
 
             // Calculate new width/height
             int characterCount = query.Length;
-            float width = 7f * characterCount;
+            float width = 7.5f * characterCount;
             float height = 17f;
 
             // Create a new Rect with the SAME POSITION but updated size
