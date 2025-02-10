@@ -20,6 +20,282 @@ namespace Arro.UITweaks
             PieMenu.sInstance.mPositionStack = new Vector2[1000];
         }
 
+        [ReplaceMethod(typeof(PieMenu), "Begin")]
+        public void Begin(MenuTree tree, Vector2 location)
+        {
+            var instance = (PieMenu)(this as object);
+            instance.mTriggerHandle =
+                instance.mContainer.AddTriggerHook("piemenu", TriggerActivationMode.kPermanent, 1);
+            instance.mContainer.TriggerDown += instance.OnTriggerDown;
+            instance.mTree = tree;
+            instance.mCurrent = instance.ValidateMenuStructure(tree.mRoot);
+            instance.SetupPieMenuButtons(instance.mCurrent, location, false);
+            instance.mCurrentButtonSelected = -1;
+            instance.mContainer.Visible = true;
+            TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
+            if (searchTextEdit != null)
+            {
+                searchTextEdit.Caption = "";
+                searchTextEdit.TextChange += OnTextChange;
+                searchTextEdit.Visible = true;
+                searchTextEdit.HideCaret = true;
+                UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit);
+            }
+
+            Audio.StartSound("ui_piemenu_primary");
+            UIManager.PushModal(instance);
+        }
+
+        [ReplaceMethod(typeof(PieMenu), "End")]
+        public void End()
+        {
+            var instance = (PieMenu)(this as object);
+            instance.mContainer.RemoveTriggerHook(instance.mTriggerHandle);
+            TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
+            if (searchTextEdit != null)
+            {
+                searchTextEdit.TextChange -= OnTextChange;
+                searchTextEdit.Visible = false;
+            }
+
+            instance.mContainer.TriggerDown -= instance.OnTriggerDown;
+            instance.mTree = null;
+            instance.mCurrent = null;
+            mFilteredRoot = null;
+            instance.mContainer.Visible = false;
+            instance.mPositionStackPtr = -1;
+            instance.mReturnButtonStackPtr = -1;
+            instance.mCurrentButtonSelected = -1;
+            instance.ResetSimHead();
+            UIManager.PopModal(instance);
+        }
+
+        private void OnTextChange(WindowBase sender, UITextChangeEventArgs eventArgs)
+        {
+            var instance = (PieMenu)(this as object);
+            string query = (sender as TextEdit).Caption;
+            if (string.IsNullOrEmpty(query))
+            {
+                instance.mCurrent = instance.ValidateMenuStructure(instance.mTree.mRoot);
+                instance.SetupPieMenuButtons(instance.mCurrent, instance.mPositionStack[instance.mPositionStackPtr],
+                    false);
+            }
+            else
+            {
+                FilterMenuItems(instance, query);
+            }
+
+            SearchTextEditAutoSize();
+        }
+
+        private void SearchTextEditAutoSize()
+        {
+            var instance = (PieMenu)(this as object);
+            TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
+            UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit);
+            if (searchTextEdit != null && instance.mItemButtons != null && instance.mItemButtons.Length > 0)
+            {
+                Window firstButton = instance.mItemButtons[0];
+                Vector2 position = firstButton.Area.TopLeft;
+                Vector2 screenPosition = instance.mContainer.WindowToScreen(position);
+                float centerX = screenPosition.x + (firstButton.Area.Width * 0.5f) - 2f;
+                float searchWidth = searchTextEdit.Area.Width;
+                searchTextEdit.Position = new Vector2(
+                    centerX - (searchWidth * 0.5f),
+                    screenPosition.y - 20f
+                );
+            }
+
+            Rect currentArea = searchTextEdit.Area;
+            Vector2 topLeft = currentArea.TopLeft;
+            int characterCount = searchTextEdit.Caption.Length;
+            float width = 13f * characterCount;
+            float height = 17f;
+
+            searchTextEdit.Area = new Rect(
+                topLeft.x,
+                topLeft.y,
+                topLeft.x + width,
+                topLeft.y + height
+            );
+        }
+
+        private MenuItem mFilteredRoot;
+        
+
+        private void FilterMenuItems(PieMenu pieMenu, string query, bool silent = false)
+        {
+            mFilteredRoot = null;
+            var originalRoot = pieMenu.mTree.mRoot;
+            var allItems = new List<MenuItem>();
+            FlattenMenuItems(originalRoot, allItems);
+            var newRoot = new MenuItem { mTree = pieMenu.mTree };
+            var normalizedQuery = RemoveDiacritics(query.ToLowerInvariant());
+            var queryWords = normalizedQuery.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (MenuItem item in allItems)
+            {
+                if (item.mStyle == MenuItem.Style.More) continue;
+
+                string[] itemWords;
+
+                try
+                {
+                    var normalizedItemName = RemoveDiacritics(item.mName.ToLowerInvariant());
+                    itemWords = normalizedItemName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                }
+                catch (Exception ex)
+                {
+                    ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessItemName");
+                    continue;
+                }
+
+                bool allQueryWordsMatched = true;
+
+                try
+                {
+                    foreach (string qWord in queryWords)
+                    {
+                        bool wordMatched = false;
+
+                        foreach (string iWord in itemWords)
+                        {
+                            if (iWord.StartsWith(qWord))
+                            {
+                                wordMatched = true;
+                                break;
+                            }
+                        }
+
+                        if (!wordMatched)
+                        {
+                            allQueryWordsMatched = false;
+                            break;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ExceptionHandler.HandleException(ex, "FilterMenuItemsCheckQueryWords");
+                    allQueryWordsMatched = false;
+                }
+
+                if (allQueryWordsMatched)
+                {
+                    try
+                    {
+                        MenuItem clonedItem = CloneMenuItem(item);
+                        newRoot.AddChild(clonedItem);
+                    }
+                    catch (Exception ex)
+                    {
+                        ExceptionHandler.HandleException(ex, "FilterMenuItemsCloneMenuItem");
+                    }
+                }
+            }
+
+            if (newRoot.ChildCount == 0)
+            {
+                var instance = (PieMenu)(this as object);
+                Sims3.Gameplay.UI.PieMenu.ShowGreyedOutTooltip(
+                    Localization.LocalizeString("Gameplay/Abstracts/GameObject:NoInteractions", new object[0]),
+                    UIManager.GetCursorPosition());
+                TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
+                searchTextEdit.TextChange -= OnTextChange;
+                searchTextEdit.Caption = searchTextEdit.Caption.Substring(0, searchTextEdit.Caption.Length - 1);
+                SearchTextEditAutoSize();
+                searchTextEdit.TextChange += OnTextChange;
+                string newQuery = searchTextEdit.Caption;
+                if (!string.IsNullOrEmpty(newQuery))
+                {
+                    FilterMenuItems(instance, newQuery, silent: true);
+                }
+                else 
+                {
+                    instance.mCurrent = instance.ValidateMenuStructure(instance.mTree.mRoot);
+                    instance.SetupPieMenuButtons(instance.mCurrent, instance.mPositionStack[instance.mPositionStackPtr], false);
+                }
+                Audio.StartSound("ui_error");
+                return;
+            }
+
+            mFilteredRoot = pieMenu.ValidateMenuStructure(newRoot);
+            pieMenu.mCurrent = mFilteredRoot;
+            pieMenu.SetupPieMenuButtons(mFilteredRoot, pieMenu.mPositionStack[pieMenu.mPositionStackPtr], false);
+            if (!silent) Audio.StartSound("ui_primary_button");
+        }
+
+        private string RemoveDiacritics(string text)
+        {
+            var normalizedString = text.Normalize(NormalizationForm.FormD);
+            var stringBuilder = new StringBuilder();
+
+            foreach (var c in normalizedString)
+            {
+                var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
+
+                if (c == 'ł')
+                {
+                    stringBuilder.Append('l');
+                }
+                else if (c == 'Ł')
+                {
+                    stringBuilder.Append('L');
+                }
+                else if (unicodeCategory != UnicodeCategory.NonSpacingMark)
+                {
+                    stringBuilder.Append(c);
+                }
+            }
+
+            return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
+        }
+
+        private void FlattenMenuItems(MenuItem root, List<MenuItem> items)
+        {
+            try
+            {
+                foreach (MenuItem child in root.mChildren)
+                {
+                    items.Add(child);
+                    FlattenMenuItems(child, items);
+                }
+            }
+            catch (Exception ex)
+            {
+                ExceptionHandler.HandleException(ex, "FilterMenuItems");
+            }
+        }
+
+        private MenuItem CloneMenuItem(MenuItem original)
+        {
+            MenuItem clone = new MenuItem
+            {
+                mName = original.mName,
+                mTag = original.mTag,
+                mStyle = original.mStyle,
+                mTree = original.mTree,
+                mIconKey = original.mIconKey,
+                mIconStyle = original.mIconStyle,
+                mIconThumbnailKey = original.mIconThumbnailKey,
+                mToolTip = original.mToolTip,
+                mListObjs = original.mListObjs,
+                mHeaders = original.mHeaders,
+                mNumSelectableRows = original.mNumSelectableRows,
+                mPickedObjects = original.mPickedObjects,
+                mTitleDelegate = original.mTitleDelegate,
+                mPickerTestDelegate = original.mPickerTestDelegate
+            };
+
+            foreach (MenuItem child in original.mChildren)
+            {
+                MenuItem clonedChild = CloneMenuItem(child);
+                clone.AddChild(clonedChild);
+            }
+
+            return clone;
+        }
+
         [ReplaceMethod(typeof(PieMenu), "SetupPieMenuButtons")]
         public void SetupPieMenuButtons(MenuItem menu, Vector2 origin, bool returnButtonVisible)
         {
@@ -60,6 +336,7 @@ namespace Arro.UITweaks
                         num2 -= 1U;
                     }
                 }
+
                 if (childCount == 1 && instance.mCurrent == mFilteredRoot)
                 {
                     instance.mHeadSceneWindow.Visible = false;
@@ -79,6 +356,8 @@ namespace Arro.UITweaks
                         buttonArea.TopLeft.y + buttonHeight
                     );
                     button.Area = buttonArea;
+                    instance.mPositionStack[++instance.mPositionStackPtr] = containerPos;
+                    instance.mPieMenuHitMask.Area = new Rect(0f, 0f, 0f, 0f);
                 }
                 else
                 {
@@ -103,8 +382,9 @@ namespace Arro.UITweaks
                     {
                         num4 = area.BottomRight.y - a.BottomRight.y;
                     }
+
                     instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
-                
+                    
 
                     Rect rect = new Rect(a.TopLeft - instance.mPieMenuHitMaskPadding,
                         a.BottomRight + instance.mPieMenuHitMaskPadding);
@@ -124,6 +404,21 @@ namespace Arro.UITweaks
                         UIManager.SetCursorPosition(instance.mItemButtons[(int)((UIntPtr)12)].Parent
                             .WindowToScreen(instance.mPositionStack[instance.mPositionStackPtr]));
                     }
+                    if (instance.mHeadObjectGuid.IsValid)
+                    {
+                        if (instance.mHeadUpdateTaskGuid.IsValid)
+                        {
+                            Simulator.DestroyObject(instance.mHeadUpdateTaskGuid);
+                            instance.mHeadUpdateTaskGuid = ObjectGuid.InvalidObjectGuid;
+                        }
+                        Vector2 currentOrigin = instance.mPositionStack[instance.mPositionStackPtr];
+                        float headSize = 128f;
+                        Vector2 topLeft = new Vector2(currentOrigin.x - headSize, currentOrigin.y - headSize);
+                        Vector2 bottomRight = new Vector2(currentOrigin.x + headSize, currentOrigin.y + headSize);
+                        instance.mHeadSceneWindow.Area = new Rect(topLeft, bottomRight);
+                        SimHeadUpdater newUpdater = new SimHeadUpdater(instance.mHeadSceneWindow, currentOrigin);
+                        instance.mHeadUpdateTaskGuid = Simulator.AddObject(newUpdater);
+                    }
                 }
 
                 for (num2 = 0U; num2 < childCount; num2 += 1U)
@@ -131,297 +426,12 @@ namespace Arro.UITweaks
                     uint num6 = instance.mButtonIndices[(int)((UIntPtr)num2)];
                     instance.mItemButtons[(int)((UIntPtr)num6)].Visible = true;
                 }
-                TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
-                if (searchTextEdit != null)
-                {
-                    UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit);
-                    Window firstButton = instance.mItemButtons[0];
-                    Vector2 position = firstButton.Area.TopLeft;
-                    Vector2 screenPosition = instance.mContainer.WindowToScreen(position);
-                    float centerX = screenPosition.x + (firstButton.Area.Width * 0.5f);
-                    float searchWidth = searchTextEdit.Area.Width;
-                    searchTextEdit.Position = new Vector2(
-                        centerX - (searchWidth * 0.5f),
-                        screenPosition.y - 20f
-                    );
-                }
+
+                SearchTextEditAutoSize();
             }
             catch (Exception ex)
             {
                 ExceptionHandler.HandleException(ex, "SetupPieMenuButtons");
-            }
-        }
-
-        [ReplaceMethod(typeof(PieMenu), "Begin")]
-        public void Begin(MenuTree tree, Vector2 location)
-        {
-            var instance = (PieMenu)(this as object);
-            instance.mTriggerHandle =
-                instance.mContainer.AddTriggerHook("piemenu", TriggerActivationMode.kPermanent, 1);
-            instance.mContainer.TriggerDown += instance.OnTriggerDown;
-            instance.mTree = tree;
-            instance.mCurrent = instance.ValidateMenuStructure(tree.mRoot);
-            instance.SetupPieMenuButtons(instance.mCurrent, location, false);
-            instance.mCurrentButtonSelected = -1;
-            instance.mContainer.Visible = true;
-            TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
-            if (searchTextEdit != null)
-            {
-                searchTextEdit.Caption = "";
-                searchTextEdit.TextChange += OnTextChange;
-                searchTextEdit.Visible = true;
-                searchTextEdit.HideCaret = true;
-                UIManager.SetFocus(InputContext.kICKeyboard, searchTextEdit);
-            }
-            Audio.StartSound("ui_piemenu_primary");
-            UIManager.PushModal(instance);
-        }
-
-        [ReplaceMethod(typeof(PieMenu), "End")]
-        public void End()
-        {
-            var instance = (PieMenu)(this as object);
-            instance.mContainer.RemoveTriggerHook(instance.mTriggerHandle);
-            TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
-            if (searchTextEdit != null)
-            {
-                searchTextEdit.TextChange -= OnTextChange;
-                searchTextEdit.Visible = false;
-            }
-
-            instance.mContainer.TriggerDown -= instance.OnTriggerDown;
-            instance.mTree = null;
-            instance.mCurrent = null;
-            mFilteredRoot = null;
-            instance.mContainer.Visible = false;
-            instance.mPositionStackPtr = -1;
-            instance.mReturnButtonStackPtr = -1;
-            instance.mCurrentButtonSelected = -1;
-            instance.ResetSimHead();
-            UIManager.PopModal(instance);
-        }
-
-        private void OnTextChange(WindowBase sender, UITextChangeEventArgs eventArgs)
-        {
-            var instance = (PieMenu)(this as object);
-            string query = (sender as TextEdit).Caption;
-            Audio.StartSound("ui_primary_button");
-            Rect currentArea = sender.Area;
-            Vector2 topLeft = currentArea.TopLeft;
-            
-            int characterCount = query.Length;
-            float width = 13f * characterCount;
-            float height = 17f;
-            
-            sender.Area = new Rect(
-                topLeft.x,
-                topLeft.y,
-                topLeft.x + width,
-                topLeft.y + height 
-            );
-
-            if (string.IsNullOrEmpty(query))
-            {
-                instance.mCurrent = instance.ValidateMenuStructure(instance.mTree.mRoot);
-                instance.SetupPieMenuButtons(instance.mCurrent, instance.mPositionStack[instance.mPositionStackPtr], false);
-            }
-            else
-            {
-                FilterMenuItems(instance, query);
-            }
-        }
-
-        private MenuItem mFilteredRoot;
-
-        private void FilterMenuItems(PieMenu pieMenu, string query)
-        {
-            List<MenuItem> allItems;
-
-            try
-            {
-                mFilteredRoot = null;
-                var originalRoot = pieMenu.mTree.mRoot;
-                allItems = new List<MenuItem>();
-                FlattenMenuItems(originalRoot, allItems);
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsInitialSetup");
-                return;
-            }
-
-            MenuItem newRoot;
-
-            try
-            {
-                newRoot = new MenuItem { mTree = pieMenu.mTree };
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsCreateNewRoot");
-                return;
-            }
-
-            string[] queryWords;
-
-            try
-            {
-                var normalizedQuery = RemoveDiacritics(query.ToLowerInvariant());
-                queryWords = normalizedQuery.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessQuery");
-                return;
-            }
-
-            try
-            {
-                foreach (MenuItem item in allItems)
-                {
-                    if (item.mStyle == MenuItem.Style.More) continue;
-
-                    string[] itemWords;
-
-                    try
-                    {
-                        var normalizedItemName = RemoveDiacritics(item.mName.ToLowerInvariant());
-                        itemWords = normalizedItemName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    }
-                    catch (Exception ex)
-                    {
-                        ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessItemName");
-                        continue;
-                    }
-
-                    bool allQueryWordsMatched = true;
-
-                    try
-                    {
-                        foreach (string qWord in queryWords)
-                        {
-                            bool wordMatched = false;
-
-                            foreach (string iWord in itemWords)
-                            {
-                                if (iWord.StartsWith(qWord))
-                                {
-                                    wordMatched = true;
-                                    break;
-                                }
-                            }
-
-                            if (!wordMatched)
-                            {
-                                allQueryWordsMatched = false;
-                                break;
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        ExceptionHandler.HandleException(ex, "FilterMenuItemsCheckQueryWords");
-                        allQueryWordsMatched = false;
-                    }
-
-                    if (allQueryWordsMatched)
-                    {
-                        try
-                        {
-                            MenuItem clonedItem = CloneMenuItem(item);
-                            newRoot.AddChild(clonedItem);
-                        }
-                        catch (Exception ex)
-                        {
-                            ExceptionHandler.HandleException(ex, "FilterMenuItemsCloneMenuItem");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsMainLoops");
-            }
-
-            try
-            {
-                if (newRoot.ChildCount == 0)
-                {
-                    var instance = (PieMenu)(this as object);
-                    Sims3.Gameplay.UI.PieMenu.ShowGreyedOutTooltip(Localization.LocalizeString("Gameplay/Abstracts/GameObject:NoInteractions", new object[0]), UIManager.GetCursorPosition());
-                    TextEdit searchTextEdit = instance.GetChildByID(185745581U, true) as TextEdit;
-                    searchTextEdit.Caption = searchTextEdit.Caption.Substring(0, searchTextEdit.Caption.Length - 1);
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsShowGreyedOutTooltip");
-                return;
-            }
-            try
-            {
-                mFilteredRoot = pieMenu.ValidateMenuStructure(newRoot);
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsValidateMenuStructure");
-                return;
-            }
-
-            try
-            {
-                pieMenu.mCurrent = mFilteredRoot;
-                pieMenu.SetupPieMenuButtons(mFilteredRoot, pieMenu.mPositionStack[pieMenu.mPositionStackPtr], false);
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "FilterMenuItemsSetupPieMenuButtons");
-            }
-        }
-
-        private MenuItem CloneMenuItem(MenuItem original)
-        {
-            MenuItem clone = new MenuItem
-            {
-                mName = original.mName,
-                mTag = original.mTag,
-                mStyle = original.mStyle,
-                mTree = original.mTree,
-                mIconKey = original.mIconKey,
-                mIconStyle = original.mIconStyle,
-                mIconThumbnailKey = original.mIconThumbnailKey,
-                mToolTip = original.mToolTip,
-                mListObjs = original.mListObjs,
-                mHeaders = original.mHeaders,
-                mNumSelectableRows = original.mNumSelectableRows,
-                mPickedObjects = original.mPickedObjects,
-                mTitleDelegate = original.mTitleDelegate,
-                mPickerTestDelegate = original.mPickerTestDelegate
-            };
-
-            foreach (MenuItem child in original.mChildren)
-            {
-                MenuItem clonedChild = CloneMenuItem(child);
-                clone.AddChild(clonedChild);
-            }
-
-            return clone;
-        }
-
-        private void FlattenMenuItems(MenuItem root, List<MenuItem> items)
-        {
-            try
-            {
-                foreach (MenuItem child in root.mChildren)
-                {
-                    items.Add(child);
-                    FlattenMenuItems(child, items);
-                }
-            }
-            catch (Exception ex)
-            {
-                ExceptionHandler.HandleException(ex, "FilterMenuItems");
             }
         }
 
@@ -434,6 +444,7 @@ namespace Arro.UITweaks
                 PieMenu.Hide();
                 eventArgs.Handled = true;
             }
+
             if (114345171U == eventArgs.TriggerCode && PieMenu.IsVisible)
             {
                 var pieMenu = (PieMenu)(this as object);
@@ -448,31 +459,6 @@ namespace Arro.UITweaks
                     }
                 }
             }
-        }
-        private string RemoveDiacritics(string text)
-        {
-            var normalizedString = text.Normalize(NormalizationForm.FormD);
-            var stringBuilder = new StringBuilder();
-
-            foreach (var c in normalizedString)
-            {
-                var unicodeCategory = CharUnicodeInfo.GetUnicodeCategory(c);
-
-                if (c == 'ł')
-                {
-                    stringBuilder.Append('l');
-                }
-                else if (c == 'Ł')
-                {
-                    stringBuilder.Append('L');
-                }
-                else if (unicodeCategory != UnicodeCategory.NonSpacingMark)
-                {
-                    stringBuilder.Append(c);
-                }
-            }
-
-            return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
         }
     }
 }
