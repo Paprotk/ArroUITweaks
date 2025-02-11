@@ -1,8 +1,10 @@
 using MonoPatcherLib;
+using Sims3.Gameplay.UI;
 using Sims3.SimIFace;
 using Sims3.UI;
 using Sims3.UI.CAS;
 using Sims3.UI.Hud;
+using Responder = Sims3.UI.Responder;
 
 namespace Arro.UITweaks
 {
@@ -38,6 +40,7 @@ namespace Arro.UITweaks
                         if (objectWorldPosition != Vector3.OutOfWorld)
                         {
                             cameraModel.FocusOnGivenPosition(objectWorldPosition, 1f);
+                            CameraController.EnableObjectFollow(objectGuid.Value, Vector3.Zero);
                         }
                     }
                 }
