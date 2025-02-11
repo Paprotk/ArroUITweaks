@@ -1,5 +1,4 @@
 using MonoPatcherLib;
-using Sims3.Gameplay.UI;
 using Sims3.SimIFace;
 using Sims3.UI;
 using Sims3.UI.CAS;
