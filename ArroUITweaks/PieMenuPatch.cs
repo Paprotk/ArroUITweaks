@@ -121,77 +121,95 @@ namespace Arro.UITweaks
         }
 
         private MenuItem mFilteredRoot;
-        
+
+        private struct MenuEntry
+        {
+            public MenuItem Item;
+            public string ParentName;
+        }
 
         private void FilterMenuItems(PieMenu pieMenu, string query, bool silent = false)
         {
             mFilteredRoot = null;
             var originalRoot = pieMenu.mTree.mRoot;
-            var allItems = new List<MenuItem>();
-            FlattenMenuItems(originalRoot, allItems);
+            var allEntries = new List<MenuEntry>();
+            FlattenMenuItems(originalRoot, allEntries, "");
             var newRoot = new MenuItem { mTree = pieMenu.mTree };
             var normalizedQuery = RemoveDiacritics(query.ToLowerInvariant());
             var queryWords = normalizedQuery.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            var tempClonesWithParents = new List<MenuEntry>();
 
-            foreach (MenuItem item in allItems)
+            foreach (MenuEntry entry in allEntries)
             {
+                MenuItem item = entry.Item;
                 if (item.mStyle == MenuItem.Style.More) continue;
 
-                string[] itemWords;
+                string normalizedItemName = RemoveDiacritics(item.mName.ToLowerInvariant());
+                string[] itemWords = normalizedItemName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
-                try
+                bool allMatched = true;
+                foreach (string qWord in queryWords)
                 {
-                    var normalizedItemName = RemoveDiacritics(item.mName.ToLowerInvariant());
-                    itemWords = normalizedItemName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                }
-                catch (Exception ex)
-                {
-                    ExceptionHandler.HandleException(ex, "FilterMenuItemsProcessItemName");
-                    continue;
-                }
-
-                bool allQueryWordsMatched = true;
-
-                try
-                {
-                    foreach (string qWord in queryWords)
+                    bool wordFound = false;
+                    foreach (string iWord in itemWords)
                     {
-                        bool wordMatched = false;
-
-                        foreach (string iWord in itemWords)
+                        if (iWord.StartsWith(qWord))
                         {
-                            if (iWord.StartsWith(qWord))
-                            {
-                                wordMatched = true;
-                                break;
-                            }
-                        }
-
-                        if (!wordMatched)
-                        {
-                            allQueryWordsMatched = false;
+                            wordFound = true;
                             break;
                         }
                     }
-                }
-                catch (Exception ex)
-                {
-                    ExceptionHandler.HandleException(ex, "FilterMenuItemsCheckQueryWords");
-                    allQueryWordsMatched = false;
+
+                    if (!wordFound)
+                    {
+                        allMatched = false;
+                        break;
+                    }
                 }
 
-                if (allQueryWordsMatched)
+                if (allMatched)
                 {
-                    try
+                    MenuItem clonedItem = CloneMenuItem(item);
+                    tempClonesWithParents.Add(new MenuEntry
                     {
-                        MenuItem clonedItem = CloneMenuItem(item);
-                        newRoot.AddChild(clonedItem);
-                    }
-                    catch (Exception ex)
+                        Item = clonedItem,
+                        ParentName = entry.ParentName
+                    });
+                }
+            }
+            
+            var nameGroups = new Dictionary<string, List<MenuEntry>>();
+            foreach (MenuEntry entry in tempClonesWithParents)
+            {
+                string baseName = entry.Item.mName;
+                if (!nameGroups.ContainsKey(baseName))
+                {
+                    nameGroups[baseName] = new List<MenuEntry>();
+                }
+
+                nameGroups[baseName].Add(entry);
+            }
+            
+            foreach (string key in nameGroups.Keys)
+            {
+                List<MenuEntry> group = nameGroups[key];
+                if (group.Count > 1)
+                {
+                    foreach (MenuEntry entry in group)
                     {
-                        ExceptionHandler.HandleException(ex, "FilterMenuItemsCloneMenuItem");
+                        if (!string.IsNullOrEmpty(entry.ParentName) &&
+                            !entry.Item.mName.Contains(" / "))
+                        {
+                            entry.Item.mName = entry.ParentName + " / " + entry.Item.mName;
+                        }
                     }
                 }
+            }
+            
+            foreach (MenuEntry entry in tempClonesWithParents)
+            {
+                newRoot.AddChild(entry.Item);
             }
 
             if (newRoot.ChildCount == 0)
@@ -210,20 +228,24 @@ namespace Arro.UITweaks
                 {
                     FilterMenuItems(instance, newQuery, silent: true);
                 }
-                else 
+                else
                 {
                     instance.mCurrent = instance.ValidateMenuStructure(instance.mTree.mRoot);
-                    instance.SetupPieMenuButtons(instance.mCurrent, instance.mPositionStack[instance.mPositionStackPtr], false);
+                    instance.SetupPieMenuButtons(instance.mCurrent, instance.mPositionStack[instance.mPositionStackPtr],
+                        false);
                 }
+
                 Audio.StartSound("ui_error");
                 return;
             }
 
             mFilteredRoot = pieMenu.ValidateMenuStructure(newRoot);
             pieMenu.mCurrent = mFilteredRoot;
-            pieMenu.SetupPieMenuButtons(mFilteredRoot, pieMenu.mPositionStack[pieMenu.mPositionStackPtr], false);
+            pieMenu.SetupPieMenuButtons(mFilteredRoot,
+                pieMenu.mPositionStack[pieMenu.mPositionStackPtr], false);
             if (!silent) Audio.StartSound("ui_primary_button");
         }
+
 
         private string RemoveDiacritics(string text)
         {
@@ -251,19 +273,19 @@ namespace Arro.UITweaks
             return stringBuilder.ToString().Normalize(NormalizationForm.FormC);
         }
 
-        private void FlattenMenuItems(MenuItem root, List<MenuItem> items)
+        private void FlattenMenuItems(MenuItem root, List<MenuEntry> items, string parentName)
         {
             try
             {
                 foreach (MenuItem child in root.mChildren)
                 {
-                    items.Add(child);
-                    FlattenMenuItems(child, items);
+                    items.Add(new MenuEntry { Item = child, ParentName = parentName });
+                    FlattenMenuItems(child, items, child.mName);
                 }
             }
             catch (Exception ex)
             {
-                ExceptionHandler.HandleException(ex, "FilterMenuItems");
+                ExceptionHandler.HandleException(ex, "FlattenMenuItems");
             }
         }
 
@@ -384,7 +406,7 @@ namespace Arro.UITweaks
                     }
 
                     instance.mPositionStack[++instance.mPositionStackPtr] = origin + new Vector2(num3, num4);
-                    
+
 
                     Rect rect = new Rect(a.TopLeft - instance.mPieMenuHitMaskPadding,
                         a.BottomRight + instance.mPieMenuHitMaskPadding);
@@ -404,6 +426,7 @@ namespace Arro.UITweaks
                         UIManager.SetCursorPosition(instance.mItemButtons[(int)((UIntPtr)12)].Parent
                             .WindowToScreen(instance.mPositionStack[instance.mPositionStackPtr]));
                     }
+
                     if (instance.mHeadObjectGuid.IsValid)
                     {
                         if (instance.mHeadUpdateTaskGuid.IsValid)
@@ -411,6 +434,7 @@ namespace Arro.UITweaks
                             Simulator.DestroyObject(instance.mHeadUpdateTaskGuid);
                             instance.mHeadUpdateTaskGuid = ObjectGuid.InvalidObjectGuid;
                         }
+
                         Vector2 currentOrigin = instance.mPositionStack[instance.mPositionStackPtr];
                         float headSize = 128f;
                         Vector2 topLeft = new Vector2(currentOrigin.x - headSize, currentOrigin.y - headSize);
