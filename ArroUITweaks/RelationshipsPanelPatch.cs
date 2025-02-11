@@ -1,7 +1,4 @@
 using MonoPatcherLib;
-using Sims3.Gameplay.Abstracts;
-using Sims3.Gameplay.Actors;
-using Sims3.Gameplay.Core;
 using Sims3.SimIFace;
 using Sims3.UI;
 using Sims3.UI.CAS;
@@ -14,7 +11,6 @@ namespace Arro.UITweaks
         [ReplaceMethod(typeof(RelationshipsPanel), "OnSimNotOnLotMouseUp")]
         public void OnSimNotOnLotMouseUp(WindowBase sender, UIMouseEventArgs eventArgs)
         {
-            var relationshipsPanel = (RelationshipsPanel)(this as object);
             Window window = sender as Window; 
             if (eventArgs.MouseKey == MouseKeys.kMouseLeft)
             {
