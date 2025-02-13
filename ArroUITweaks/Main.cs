@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using MonoPatcherLib;
-using Sims3.Gameplay;
 using Sims3.Gameplay.Core;
 using Sims3.SimIFace;
+using Sims3.UI;
+using OneShotFunctionTask = Sims3.Gameplay.OneShotFunctionTask;
+
 namespace Arro.UITweaks
 {
     [Plugin]
@@ -21,10 +24,23 @@ namespace Arro.UITweaks
         {
             Commands.sGameCommands.Register("RecoverNotification", "Recovers the last deleted notification.",
                 Commands.CommandType.General, (RecoverNotification.RecoverLastDeletedNotification));
+            Commands.sGameCommands.Register("FocusOnVenue", "Focuson venuelol.",
+                Commands.CommandType.General, (Main.VenueCheck));
             Commands.sGameCommands.Register("SendStrayToActiveLot", "Sends a stray pet to the active lot.",
                 Commands.CommandType.Cheat, (StrayTooltipPatch.SendStrayToActiveLot));
             CheckForMods();
             
+        }
+
+        private static int VenueCheck(object[] parameters)
+        {
+            Simulator.AddObject(new OneShotFunctionTask(() =>
+                        {
+                            VenueCollector.Initialize();
+                            VenueCollector.ShowSearchDialog();
+                        }, StopWatch.TickStyles.Seconds, 0.1f));
+           
+           return 1;
         }
 
         public static void OnWorldLoadFinished(object sender, EventArgs e)
