@@ -39,7 +39,6 @@
         <Compile Include="SelectObjectTask.cs" />
         <Compile Include="Main.cs" />
         <Compile Include="NavigationPatch.cs" />
-        <Compile Include="PieMenuPatch.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
         <Compile Include="QueueMove.cs" />
         <Compile Include="RecoverNotification.cs" />

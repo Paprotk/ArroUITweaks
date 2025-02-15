@@ -93,9 +93,17 @@ namespace Arro.UITweaks
 
         private void HandleVehicleSelection(Vehicle vehicle, ScenePickArgs eventArgs)
         {
-            var driver = vehicle.Driver;
-            Camera.FocusOnGivenPosition(driver.Position, 1f);
-            CameraController.EnableObjectFollow(vehicle.ObjectId.Value, Vector3.Zero);
+            if (vehicle.Driver == null)
+            {
+                Camera.FocusOnGivenPosition(vehicle.Position, 1f);
+                CameraController.EnableObjectFollow(vehicle.ObjectId.Value, Vector3.Zero);
+            }
+            else
+            {
+                var driver = vehicle.Driver;
+                Camera.FocusOnGivenPosition(driver.Position, 1f);
+                CameraController.EnableObjectFollow(driver.ObjectId.Value, Vector3.Zero);
+            }
             
             if (sNraasSelectTaskType == null || sOnSelectVehicleMethod == null) return;
 
