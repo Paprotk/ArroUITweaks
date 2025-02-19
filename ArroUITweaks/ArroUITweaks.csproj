@@ -36,6 +36,7 @@
         <Compile Include="CustomCommandDialog.cs" />
         <Compile Include="CustomLunarTooltip.cs" />
         <Compile Include="ExceptionHandler.cs" />
+        <Compile Include="CurrentRelationshipsPatch.cs" />
         <Compile Include="SelectObjectTask.cs" />
         <Compile Include="Main.cs" />
         <Compile Include="NavigationPatch.cs" />
